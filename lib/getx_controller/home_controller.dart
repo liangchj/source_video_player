@@ -27,11 +27,12 @@ class HomeController extends GetxController {
 
   @override
   void onInit() {
-    if (kIsWeb) {
+    /*if (kIsWeb) {
       requestPermission(true);
     } else {
       _handleRequestPermission();
-    }
+    }*/
+    _handleRequestPermission();
 
     tabPageList = [
       const NetResourcePage(),
