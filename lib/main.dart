@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:source_video_player/cache/mmkv_cache.dart';
 import 'package:source_video_player/pages/home_page.dart';
 import 'package:source_video_player/route/app_pages.dart';
 import 'package:source_video_player/route/app_routes.dart';
 
-void main() {
+Future<void> main() async {
+  await MMKVCacheInit.preInit();
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(GetMaterialApp(
     initialRoute: AppRoutes.index,
     getPages: AppPages.pages,

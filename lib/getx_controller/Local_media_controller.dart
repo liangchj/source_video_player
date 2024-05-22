@@ -29,7 +29,8 @@ class LocalMediaController extends GetxController {
             return a.name.toLowerCase().compareTo(b.name.toLowerCase());
           });
         }
-        MediaDataCache.localDirectoryList = localDirectoryList;
+        MediaDataCache.localDirectoryList.clear();
+        MediaDataCache.localDirectoryList.assignAll(localDirectoryList);
       }
     } finally {
       loading(false);
