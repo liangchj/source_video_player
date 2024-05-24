@@ -1,3 +1,4 @@
+import 'package:auto_orientation/auto_orientation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:source_video_player/cache/mmkv_cache.dart';
@@ -8,6 +9,7 @@ import 'package:source_video_player/route/app_routes.dart';
 Future<void> main() async {
   await MMKVCacheInit.preInit();
   WidgetsFlutterBinding.ensureInitialized();
+  AutoOrientation.portraitUpMode();
   runApp(GetMaterialApp(
     initialRoute: AppRoutes.index,
     getPages: AppPages.pages,

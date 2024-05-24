@@ -24,6 +24,8 @@ class FileListController extends GetxController {
     super.onInit();
   }
 
+
+
   void getFileList(Map<String, dynamic> map) {
     params(map);
     logger.d("传入的参数：");
@@ -70,7 +72,7 @@ class FileListController extends GetxController {
           var fileList = await FileDirectoryUtils.getFileListByPath(path: path, fileFormat: FileFormat.video);
           if (fileList.isNotEmpty) {
             for (var element in fileList) {
-              element.barragePath = DanmakuDataStoreCache.getInstance().getString(CacheConst.cachePrev + element.path);
+              element.barragePath = DanmakuDataStoreCache.getInstance().getString(CacheConst.cachePrev + element.path) ?? "";
             }
             this.fileList.assignAll(fileList);
           }

@@ -18,14 +18,14 @@ class MMKVCacheInit {
 
   static Future<bool> preInit() async {
     if (!initialize) {
-      // var initialize = await MMKV.initialize();
+      var initialize = await MMKV.initialize();
       MMKVCacheInit._setInitialize(true);
     }
     return initialize;
   }
 
   Future<void> init() async {
-    // var initialize = await MMKV.initialize();
+    var initialize = await MMKV.initialize();
   }
 }
 

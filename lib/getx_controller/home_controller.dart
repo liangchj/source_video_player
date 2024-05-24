@@ -1,5 +1,3 @@
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:source_video_player/common/app_constants.dart';
@@ -24,7 +22,6 @@ class HomeController extends GetxController {
   var currentTabIndex = 0.obs;
   PageController? tabController;
 
-
   @override
   void onInit() {
     /*if (kIsWeb) {
@@ -39,8 +36,7 @@ class HomeController extends GetxController {
       const MediaLibraryPage(),
       const PersonalPage()
     ];
-    tabController =
-        PageController(initialPage: currentTabIndex.value);
+    tabController = PageController(initialPage: currentTabIndex.value);
     ever(currentTabIndex, (index) {
       tabController?.jumpToPage(index);
       appTitle(bottomTabList[index].label);

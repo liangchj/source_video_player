@@ -1,4 +1,3 @@
-
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -21,6 +20,7 @@ class FileListPage extends GetView<FileListController> {
 
   @override
   Widget build(BuildContext context) {
+    print("重绘build-FileListPage");
     return Scaffold(
       appBar: AppBar(
         title: Text(controller.title.value),
@@ -29,9 +29,9 @@ class FileListPage extends GetView<FileListController> {
               onPressed: () => {}, icon: const Icon(Icons.search_rounded)),
           IconButton(
               onPressed: () => {
-                if (!controller.loading.value)
-                  {controller.getVideoFileList()}
-              },
+                    if (!controller.loading.value)
+                      {controller.getVideoFileList()}
+                  },
               icon: const Icon(Icons.refresh_rounded)),
         ],
       ),
@@ -47,6 +47,7 @@ class FileListPage extends GetView<FileListController> {
       ),
     );
   }
+
   // 目录
   Widget _defaultHeaderWidget() {
     return Align(
@@ -91,7 +92,12 @@ class FileListPage extends GetView<FileListController> {
           return FileItemWidget(
               fileModel: fileModel,
               trailingWidget: _buildRightOperateIcon(fileModel, context),
-              onTap: () {});
+              onTap: () {
+                Get.toNamed(AppRoutes.fullScreenPlayPage, arguments: {
+                  "onlyFullScreenPlay": true,
+                  "fileModel": fileModel
+                });
+              });
         });
   }
 
@@ -127,7 +133,7 @@ class FileListPage extends GetView<FileListController> {
           children: [
             Padding(
               padding:
-              const EdgeInsets.only(left: 16, top: 6, right: 16, bottom: 0),
+                  const EdgeInsets.only(left: 16, top: 6, right: 16, bottom: 0),
               child: Text(
                 fileModel.name,
                 textAlign: TextAlign.left,
@@ -252,7 +258,7 @@ class FileListPage extends GetView<FileListController> {
                     child: const Text("移除"),
                     onPressed: () {
                       var remove =
-                      controller.removeFileFromPlayDirectory(fileModel);
+                          controller.removeFileFromPlayDirectory(fileModel);
                       if (remove) {
                         // 触发更新播放列表
                         // Get.find<PlayDirectoryListController>().removeVideoFromPlayDirectory(fileModel.directory);
@@ -308,7 +314,7 @@ class FileListPage extends GetView<FileListController> {
   void _renameFile(FileModel fileModel) {
     String oldName = fileModel.name;
     String suffix =
-    fileModel.path.contains(".") ? fileModel.path.split(".").last : "";
+        fileModel.path.contains(".") ? fileModel.path.split(".").last : "";
     //关闭对话框
     bool open = Get.isBottomSheetOpen ?? false;
     if (open) {
@@ -316,7 +322,7 @@ class FileListPage extends GetView<FileListController> {
     }
     //定义一个controller
     TextEditingController nameController =
-    TextEditingController.fromValue(TextEditingValue(
+        TextEditingController.fromValue(TextEditingValue(
       text: oldName,
     ));
     /*bool? flag = await AlertDialogUtils.modalConfirmAlertDialog(
@@ -389,7 +395,7 @@ class FileListPage extends GetView<FileListController> {
                   if (renameSync.existsSync()) {
                     String path = renameSync.path;
                     String fullName =
-                    path.contains("/") ? path.split("/").last : path;
+                        path.contains("/") ? path.split("/").last : path;
                     String name = fullName.contains(".")
                         ? fullName.substring(0, fullName.lastIndexOf("."))
                         : fullName;
@@ -519,29 +525,26 @@ class FileListPage extends GetView<FileListController> {
     }
     //定义一个controller
     TextEditingController newPlayListController =
-    TextEditingController.fromValue(TextEditingValue(
+        TextEditingController.fromValue(TextEditingValue(
       /// 设置光标在最后
       selection: TextSelection.fromPosition(
           const TextPosition(affinity: TextAffinity.downstream, offset: 0)),
     ));
     playDirectoryController.createNewPlayDirectoryName.value = ""; // 清除新增播放目录名称
     playDirectoryController.createNewPlayDirectoryErrorText.value =
-    ""; // 清除新增播放目录验证信息
+        ""; // 清除新增播放目录验证信息
     return SingleChildScrollView(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
         child: Column(
           children: [
             const Row(
-              children: [
-                Icon(Icons.playlist_play_rounded),
-                Text("创建新的播放列表")
-              ],
+              children: [Icon(Icons.playlist_play_rounded), Text("创建新的播放列表")],
             ),
             Row(
               children: [
                 Obx(
-                      () => Expanded(
+                  () => Expanded(
                     child: TextField(
                       controller: newPlayListController,
                       autofocus: true,
@@ -567,70 +570,70 @@ class FileListPage extends GetView<FileListController> {
                           //获得焦点下划线设为蓝色
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(6),
-                            borderSide:
-                            BorderSide(color: Get.theme.dialogBackgroundColor),
+                            borderSide: BorderSide(
+                                color: Get.theme.dialogBackgroundColor),
                           ),
                           border: const OutlineInputBorder(),
                           // 新增播放目录名称验证信息
                           errorText: playDirectoryController
-                              .createNewPlayDirectoryErrorText.value.isEmpty
+                                  .createNewPlayDirectoryErrorText.value.isEmpty
                               ? null
                               : playDirectoryController
-                              .createNewPlayDirectoryErrorText.value),
+                                  .createNewPlayDirectoryErrorText.value),
                     ),
                   ),
                 ),
                 const Padding(padding: EdgeInsets.symmetric(horizontal: 5)),
                 Obx(() => Padding(
-                  // 新增播放目录名称验证不通过时显示错误信息导致输入框上移，因此按钮也同步上移
-                  padding: playDirectoryController
-                      .createNewPlayDirectoryErrorText.value.isEmpty
-                      ? EdgeInsets.zero
-                      : const EdgeInsets.only(bottom: 22.0),
-                  child: ElevatedButton(
-                    // 新增播放目录名称为空时不可点击创建按钮
-                      onPressed: playDirectoryController
-                          .createNewPlayDirectoryName.value.isEmpty
-                          ? null
-                          : () {
-                        String text =
-                        newPlayListController.text.trim();
-                        if (text.isNotEmpty) {
-                          var fileDirectoryModel = DirectoryModel(
-                              path: text, name: text, fileNumber: 0);
-                          var msg = playDirectoryController
-                              .addVideoPlayDirectory(
-                              fileDirectoryModel);
-                          String toastText = playDirectoryController
-                              .addVideoToPlayDirectory(
-                              fileDirectoryModel, fileModel);
-                          if (msg == null || msg.isEmpty) {
-                            //关闭对话框
-                            bool open =
-                                Get.isBottomSheetOpen ?? false;
-                            if (open) {
-                              Get.back();
-                            }
-                          }
-                          // 视频已经存在于“”列表中
-                          // 一个视频已添加到“”列表
-                          if (toastText.isNotEmpty) {
-                            Fluttertoast.showToast(
-                                msg: toastText,
-                                toastLength: Toast.LENGTH_SHORT,
-                                gravity: ToastGravity.CENTER,
-                                timeInSecForIosWeb: 1,
-                                backgroundColor:
-                                Colors.black.withOpacity(0.7),
-                                textColor: Colors.white,
-                                fontSize: 16.0);
-                          }
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(0, 36)),
-                      child: const Text("创建")),
-                )),
+                      // 新增播放目录名称验证不通过时显示错误信息导致输入框上移，因此按钮也同步上移
+                      padding: playDirectoryController
+                              .createNewPlayDirectoryErrorText.value.isEmpty
+                          ? EdgeInsets.zero
+                          : const EdgeInsets.only(bottom: 22.0),
+                      child: ElevatedButton(
+                          // 新增播放目录名称为空时不可点击创建按钮
+                          onPressed: playDirectoryController
+                                  .createNewPlayDirectoryName.value.isEmpty
+                              ? null
+                              : () {
+                                  String text =
+                                      newPlayListController.text.trim();
+                                  if (text.isNotEmpty) {
+                                    var fileDirectoryModel = DirectoryModel(
+                                        path: text, name: text, fileNumber: 0);
+                                    var msg = playDirectoryController
+                                        .addVideoPlayDirectory(
+                                            fileDirectoryModel);
+                                    String toastText = playDirectoryController
+                                        .addVideoToPlayDirectory(
+                                            fileDirectoryModel, fileModel);
+                                    if (msg == null || msg.isEmpty) {
+                                      //关闭对话框
+                                      bool open =
+                                          Get.isBottomSheetOpen ?? false;
+                                      if (open) {
+                                        Get.back();
+                                      }
+                                    }
+                                    // 视频已经存在于“”列表中
+                                    // 一个视频已添加到“”列表
+                                    if (toastText.isNotEmpty) {
+                                      Fluttertoast.showToast(
+                                          msg: toastText,
+                                          toastLength: Toast.LENGTH_SHORT,
+                                          gravity: ToastGravity.CENTER,
+                                          timeInSecForIosWeb: 1,
+                                          backgroundColor:
+                                              Colors.black.withOpacity(0.7),
+                                          textColor: Colors.white,
+                                          fontSize: 16.0);
+                                    }
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(0, 36)),
+                          child: const Text("创建")),
+                    )),
               ],
             ),
           ],
@@ -638,8 +641,4 @@ class FileListPage extends GetView<FileListController> {
       ),
     );
   }
-
-
-
-
 }
