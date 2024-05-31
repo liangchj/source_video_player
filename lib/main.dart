@@ -32,4 +32,3 @@ class SourceVideoPlayerApp extends StatelessWidget {
     );
   }
 }
-

@@ -1,6 +1,8 @@
 import 'package:auto_orientation/auto_orientation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:jin_flutter_player/model/resource_chapter_model.dart';
 import 'package:jin_flutter_player/model/resource_model.dart';
 import 'package:logger/logger.dart';
 import 'package:source_video_player/model/file_model.dart';
@@ -10,6 +12,7 @@ class PlayController extends GetxController {
   // 仅支持全屏播放
   bool onlyFullScreenPlay = false;
   ResourceModel? resourceModel;
+  List<ResourceChapterModel>? resourceChapterList;
   var canPop = true.obs;
   @override
   void onInit() {
@@ -21,6 +24,7 @@ class PlayController extends GetxController {
         : params["onlyFullScreenPlay"];
     if (onlyFullScreenPlay) {
       AutoOrientation.landscapeAutoMode();
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
       canPop(false);
     }
     if (params.isNotEmpty &&
@@ -30,25 +34,43 @@ class PlayController extends GetxController {
       resourceModel = ResourceModel(
           id: fileModel.path, name: fileModel.name, path: fileModel.path);
     }
+    int index =
+        params.isNotEmpty && params["index"] is int ? params["index"] : 0;
+    if (params.isNotEmpty &&
+        params["fileList"] != null &&
+        params["fileList"] is List<FileModel>) {
+      List<FileModel> list = params["fileList"];
+      resourceChapterList = [];
+      for (int i = 0; i < list.length; i++) {
+        FileModel fileModel = list[i];
+        ResourceModel resourceModel = ResourceModel(
+            id: fileModel.path, name: fileModel.name, path: fileModel.path);
+
+        ResourceChapterModel chapterModel = ResourceChapterModel(
+            resourceModel: resourceModel, index: i, activated: i == index);
+        resourceChapterList?.add(chapterModel);
+      }
+    }
     logger.d("播放页面接收到的参数：$params");
     super.onInit();
   }
 
-
-
   /*@override
   void onClose() {
     AutoOrientation.portraitUpMode();
-  }
+  }*/
 
   @override
   void dispose() {
+    AutoOrientation.portraitUpMode();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
     super.dispose();
-  }*/
-
-
+  }
 
   closePlayPage(bool didPop) {
     AutoOrientation.portraitUpMode();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
   }
 }

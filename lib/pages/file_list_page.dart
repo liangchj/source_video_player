@@ -3,6 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
+import 'package:jin_flutter_player/model/resource_chapter_model.dart';
+import 'package:jin_flutter_player/model/resource_model.dart';
+import 'package:jin_flutter_player/params/option_params.dart';
+import 'package:jin_flutter_player/play_page.dart';
 import 'package:source_video_player/getx_controller/file_list_controller.dart';
 import 'package:source_video_player/getx_controller/play_directory_list_controller.dart';
 import 'package:source_video_player/model/directory_model.dart';
@@ -93,10 +97,33 @@ class FileListPage extends GetView<FileListController> {
               fileModel: fileModel,
               trailingWidget: _buildRightOperateIcon(fileModel, context),
               onTap: () {
-                Get.toNamed(AppRoutes.fullScreenPlayPage, arguments: {
-                  "onlyFullScreenPlay": true,
-                  "fileModel": fileModel
-                });
+                // Get.toNamed(AppRoutes.fullScreenPlayPage, arguments: {
+                //   "onlyFullScreenPlay": true,
+                //   "fileModel": fileModel,
+                //   "fileList": controller.fileList.value,
+                //   "index": index
+                // });
+                List<ResourceChapterModel> resourceChapterList = [];
+                for (int i = 0; i < controller.fileList.length; i++) {
+                  FileModel fileModel = controller.fileList[i];
+                  ResourceModel resourceModel = ResourceModel(
+                      id: fileModel.path,
+                      name: fileModel.name,
+                      path: fileModel.path);
+
+                  ResourceChapterModel chapterModel = ResourceChapterModel(
+                      resourceModel: resourceModel,
+                      index: i,
+                      activated: i == index);
+                  resourceChapterList.add(chapterModel);
+                }
+                Get.to(PlayPage(
+                  optionParams: OptionParams(
+                      autoPlay: true,
+                      aspectRatio: 16 / 10,
+                      isFullScreen: true,
+                      resourceChapterList: resourceChapterList),
+                ));
               });
         });
   }
