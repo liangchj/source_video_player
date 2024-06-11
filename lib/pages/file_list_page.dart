@@ -1,12 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_jin_player/flutter_jin_player.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
-import 'package:jin_flutter_player/model/resource_chapter_model.dart';
-import 'package:jin_flutter_player/model/resource_model.dart';
-import 'package:jin_flutter_player/params/option_params.dart';
-import 'package:jin_flutter_player/play_page.dart';
 import 'package:source_video_player/getx_controller/file_list_controller.dart';
 import 'package:source_video_player/getx_controller/play_directory_list_controller.dart';
 import 'package:source_video_player/model/directory_model.dart';
@@ -103,26 +100,30 @@ class FileListPage extends GetView<FileListController> {
                 //   "fileList": controller.fileList.value,
                 //   "index": index
                 // });
-                List<ResourceChapterModel> resourceChapterList = [];
+                List<ResourceChapterItem> resourceChapterList = [];
                 for (int i = 0; i < controller.fileList.length; i++) {
                   FileModel fileModel = controller.fileList[i];
-                  ResourceModel resourceModel = ResourceModel(
+                  ResourceItem resourceItem = ResourceItem(
                       id: fileModel.path,
                       name: fileModel.name,
-                      path: fileModel.path);
+                      path: fileModel.path,
+                      danmakuSourceItem: DanmakuSourceItem(
+                          path: "assets/1.xml", pathFromAssets: true));
 
-                  ResourceChapterModel chapterModel = ResourceChapterModel(
-                      resourceModel: resourceModel,
+                  ResourceChapterItem chapterModel = ResourceChapterItem(
+                      resourceItem: resourceItem,
                       index: i,
                       activated: i == index);
                   resourceChapterList.add(chapterModel);
                 }
                 Get.to(PlayPage(
-                  optionParams: OptionParams(
-                      autoPlay: true,
-                      aspectRatio: 16 / 10,
-                      isFullScreen: true,
-                      resourceChapterList: resourceChapterList),
+                  configOptions: ConfigOptions(
+                      danmakuConfigOptions:
+                          DanmakuConfigOptions(updateDanmakuPathFn: (path) {})),
+                  createdPlayerGetxController: (c) {
+                    c.playConfigOptions
+                        .resourceChapterList(resourceChapterList);
+                  },
                 ));
               });
         });
@@ -418,7 +419,7 @@ class FileListPage extends GetView<FileListController> {
                       "${fileModel.dir}${Platform.pathSeparator}$newName${suffix.isEmpty ? '' : '.$suffix'}");
                   controller.logger.d(
                       "重命名成功,$renameSync,${renameSync.path},${FileSystemEntity.isFileSync(renameSync.path)}");
-                  FileModel? newFileModel;
+                  // FileModel? newFileModel;
                   if (renameSync.existsSync()) {
                     String path = renameSync.path;
                     String fullName =

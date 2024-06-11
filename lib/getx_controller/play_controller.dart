@@ -1,9 +1,7 @@
 import 'package:auto_orientation/auto_orientation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_jin_player/flutter_jin_player.dart';
 import 'package:get/get.dart';
-import 'package:jin_flutter_player/model/resource_chapter_model.dart';
-import 'package:jin_flutter_player/model/resource_model.dart';
 import 'package:logger/logger.dart';
 import 'package:source_video_player/model/file_model.dart';
 
@@ -11,8 +9,8 @@ class PlayController extends GetxController {
   Logger logger = Logger();
   // 仅支持全屏播放
   bool onlyFullScreenPlay = false;
-  ResourceModel? resourceModel;
-  List<ResourceChapterModel>? resourceChapterList;
+  ResourceItem? resourceItem;
+  List<ResourceChapterItem>? resourceChapterList;
   var canPop = true.obs;
   @override
   void onInit() {
@@ -31,7 +29,7 @@ class PlayController extends GetxController {
         params["fileModel"] != null &&
         params["fileModel"] is FileModel) {
       FileModel fileModel = params["fileModel"];
-      resourceModel = ResourceModel(
+      resourceItem = ResourceItem(
           id: fileModel.path, name: fileModel.name, path: fileModel.path);
     }
     int index =
@@ -43,11 +41,14 @@ class PlayController extends GetxController {
       resourceChapterList = [];
       for (int i = 0; i < list.length; i++) {
         FileModel fileModel = list[i];
-        ResourceModel resourceModel = ResourceModel(
-            id: fileModel.path, name: fileModel.name, path: fileModel.path);
+        ResourceItem item = ResourceItem(
+            id: fileModel.path,
+            name: fileModel.name,
+            path: fileModel.path,
+            danmakuSourceItem: DanmakuSourceItem(path: "assets/1.xml"));
 
-        ResourceChapterModel chapterModel = ResourceChapterModel(
-            resourceModel: resourceModel, index: i, activated: i == index);
+        ResourceChapterItem chapterModel = ResourceChapterItem(
+            resourceItem: item, index: i, activated: i == index);
         resourceChapterList?.add(chapterModel);
       }
     }

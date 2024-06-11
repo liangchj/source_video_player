@@ -10,26 +10,26 @@ String fileModelListToJson(List<FileModel> data) =>
 class FileModel {
   FileModel(
       {required this.path,
-        required this.fullName,
-        required this.name,
-        this.fileSourceType = FileSourceType.localFile,
-        required this.directory,
-        this.barragePath,
-        this.subtitlePath});
+      required this.fullName,
+      required this.name,
+      this.fileSourceType = FileSourceType.localFile,
+      required this.directory,
+      this.danmakuPath,
+      this.subtitlePath});
   final String path;
   String fullName;
   String name;
   // 本地文件、播放列表文件
   FileSourceType fileSourceType;
   String directory;
-  String? barragePath;
+  String? danmakuPath;
   String? subtitlePath;
 
   factory FileModel.fromJson(Map<String, dynamic> json) => FileModel(
       path: json["path"] ?? "",
       fullName: json["fullName"] ?? "",
       directory: json["directory"] ?? "",
-      barragePath: json["barragePath"],
+      danmakuPath: json["danmakuPath"],
       subtitlePath: json["subtitlePath"],
       name: json["name"] ??
           (json["fullName"].contains(".")
@@ -37,13 +37,13 @@ class FileModel {
               : json["fullName"] ?? ""));
 
   Map<String, dynamic> toJson() => {
-    "path": path,
-    "fullName": fullName,
-    "name": name,
-    "directory": directory,
-    "barragePath": barragePath,
-    "subtitlePath": subtitlePath
-  };
+        "path": path,
+        "fullName": fullName,
+        "name": name,
+        "directory": directory,
+        "danmakuPath": danmakuPath,
+        "subtitlePath": subtitlePath
+      };
 
   File get file => File(path);
 

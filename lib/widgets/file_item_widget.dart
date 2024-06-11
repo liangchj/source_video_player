@@ -1,11 +1,16 @@
-
 import 'package:flutter/material.dart';
 import 'package:source_video_player/model/file_model.dart';
 import 'package:source_video_player/utils/date_utils.dart';
 
 /// 文件widget
 class FileItemWidget extends StatelessWidget {
-  const FileItemWidget({super.key, required this.fileModel, this.leadingWidget, this.subtitleWidget, this.trailingWidget, this.onTap});
+  const FileItemWidget(
+      {super.key,
+      required this.fileModel,
+      this.leadingWidget,
+      this.subtitleWidget,
+      this.trailingWidget,
+      this.onTap});
   final FileModel fileModel;
   final Widget? leadingWidget;
   final Widget? subtitleWidget;
@@ -22,9 +27,10 @@ class FileItemWidget extends StatelessWidget {
         color: Colors.black26,
       ),
     );
+
     /// 弹幕和字幕信息
     List<Widget> subtitleList = [];
-    if (fileModel.barragePath != null && fileModel.barragePath!.isNotEmpty) {
+    if (fileModel.danmakuPath != null && fileModel.danmakuPath!.isNotEmpty) {
       subtitleList.add(const CircleAvatar(
           backgroundColor: Colors.blue,
           radius: 8,
@@ -39,7 +45,8 @@ class FileItemWidget extends StatelessWidget {
     if (subtitleList.isEmpty) {
       // barrageSubtitleList.add(Container(width: 0,));
     }
-    subtitleList.add(Text(DateTimeUtils.ymdhmsFormatter.format(fileModel.modTime)));
+    subtitleList
+        .add(Text(DateTimeUtils.ymdhmsFormatter.format(fileModel.modTime)));
 
     Widget defaultSubtitleWidget = Padding(
       padding: const EdgeInsets.only(top: 6),
