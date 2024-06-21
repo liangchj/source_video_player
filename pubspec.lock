@@ -33,6 +33,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.1.1"
+  canvas_danmaku:
+    dependency: transitive
+    description:
+      name: canvas_danmaku
+      sha256: d9335cef90d07fe1d916546c22960a07592dbaee30306b03baefb9e13d35a78b
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.1.6"
   characters:
     dependency: transitive
     description:
@@ -102,6 +110,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_android_danmaku:
+    dependency: "direct main"
+    description:
+      path: "../flutter/plugin/flutter_android_danmaku"
+      relative: true
+    source: path
+    version: "0.0.1"
   flutter_jin_player:
     dependency: "direct main"
     description:
@@ -496,6 +511,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.0.1"
+  scrollview_observer:
+    dependency: transitive
+    description:
+      name: scrollview_observer
+      sha256: "521329b7adfa2c1f172d7235f76e33167d3c2ea7c240aa5c281dff2b23f23407"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.20.0"
   sky_engine:
     dependency: transitive
     description: flutter

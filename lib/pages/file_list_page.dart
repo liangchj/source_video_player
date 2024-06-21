@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_jin_player/flutter_jin_player.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
+import 'package:source_video_player/danmaku/danmaku_flame_master.dart';
 import 'package:source_video_player/getx_controller/file_list_controller.dart';
 import 'package:source_video_player/getx_controller/play_directory_list_controller.dart';
 import 'package:source_video_player/model/directory_model.dart';
@@ -108,7 +109,10 @@ class FileListPage extends GetView<FileListController> {
                       name: fileModel.name,
                       path: fileModel.path,
                       danmakuSourceItem: DanmakuSourceItem(
-                          path: "assets/1.xml", pathFromAssets: true));
+                        // path: "assets/1.xml",
+                        path: "/storage/emulated/0/1.xml",
+                        pathFromAssets: false,
+                      ));
 
                   ResourceChapterItem chapterModel = ResourceChapterItem(
                       resourceItem: resourceItem,
@@ -117,9 +121,10 @@ class FileListPage extends GetView<FileListController> {
                   resourceChapterList.add(chapterModel);
                 }
                 Get.to(PlayPage(
-                  configOptions: ConfigOptions(
-                      danmakuConfigOptions:
-                          DanmakuConfigOptions(updateDanmakuPathFn: (path) {})),
+                  // configOptions: ConfigOptions(
+                  //     danmakuConfigOptions: DanmakuConfigOptions(
+                  //         danmaku: DanmakuFlameMaster(),
+                  //         updateDanmakuPathFn: (path) {})),
                   createdPlayerGetxController: (c) {
                     c.playConfigOptions
                         .resourceChapterList(resourceChapterList);
