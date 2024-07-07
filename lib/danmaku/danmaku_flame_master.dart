@@ -11,19 +11,19 @@ class DanmakuFlameMaster extends IDanmaku {
   final int baseDurationMs = 3800;
   // 初始化弹幕
   @override
-  Widget? initDanmaku() {
-    playerGetxController.logger.d("初始化弹幕");
+  Widget? initDanmaku({bool? start}) {
+    playerGetxController!.logger.d("初始化弹幕");
     return FlutterAndroidDanmakuView(
       onViewCreated: (c) {
         danmakuController = c;
       },
-      danmakuOptions: getDanmakuOptions(),
+      danmakuOptions: getDanmakuOptions(start: start == null ? false : start),
     );
     // return Obx(() {
     //   // 显示区域
     //   int areaIndex =
-    //       playerGetxController.danmakuConfigOptions.danmakuArea.value.areaIndex;
-    //   List<DanmakuAreaItem> danmakuAreaItemList = playerGetxController
+    //       playerGetxController!.danmakuConfigOptions.danmakuArea.value.areaIndex;
+    //   List<DanmakuAreaItem> danmakuAreaItemList = playerGetxController!
     //       .danmakuConfigOptions.danmakuArea.value.danmakuAreaItemList;
     //   double area = danmakuAreaItemList.isNotEmpty &&
     //           danmakuAreaItemList.length > areaIndex
@@ -41,11 +41,11 @@ class DanmakuFlameMaster extends IDanmaku {
     // });
   }
 
-  DanmakuOptions getDanmakuOptions() {
+  DanmakuOptions getDanmakuOptions({bool start = false}) {
     // 显示区域
     // int areaIndex =
-    //     playerGetxController.danmakuConfigOptions.danmakuArea.value.areaIndex;
-    // List<DanmakuAreaItem> danmakuAreaItemList = playerGetxController
+    //     playerGetxController!.danmakuConfigOptions.danmakuArea.value.areaIndex;
+    // List<DanmakuAreaItem> danmakuAreaItemList = playerGetxController!
     //     .danmakuConfigOptions.danmakuArea.value.danmakuAreaItemList;
     // double area =
     //     danmakuAreaItemList.isNotEmpty && danmakuAreaItemList.length > areaIndex
@@ -54,27 +54,31 @@ class DanmakuFlameMaster extends IDanmaku {
 
     // 弹幕速度
     double second =
-        playerGetxController.danmakuConfigOptions.danmakuSpeed.value.speed /
-            playerGetxController.playConfigOptions.playSpeed.value;
+        playerGetxController!.danmakuConfigOptions.danmakuSpeed.value.speed /
+            playerGetxController!.playConfigOptions.playSpeed.value;
 
     DanmakuOptions danmakuOptions = DanmakuOptions(
-      isStart: true,
+      androidDanmakuType: AndroidDanmakuType.akDanmaku,
+      isStart: start,
       isShowCache: true,
       isShowFPS: true,
-      danmakuPath: playerGetxController
+      danmakuPath: playerGetxController!
           .danmakuConfigOptions.danmakuSourceItem.value.path,
-      danmakuAlphaRatio: playerGetxController
+      danmakuAlphaRatio: playerGetxController!
               .danmakuConfigOptions.danmakuAlphaRatio.value.ratio /
           100.0,
-      danmakuFontSizeRatio: playerGetxController
+      danmakuFontSizeRatio: playerGetxController!
               .danmakuConfigOptions.danmakuFontSize.value.ratio /
           100.0,
-      danmakuSpeed: second * 1000.0 / baseDurationMs,
-      danmakuStyleStroke: playerGetxController
+      // danmakuSpeed: second * 1000.0 / baseDurationMs,
+      danmakuSpeed: baseDurationMs /
+          ((playerGetxController?.playConfigOptions.playSpeed.value ?? 1.0) *
+              (second * 1000)),
+      danmakuStyleStroke: playerGetxController!
           .danmakuConfigOptions.danmakuStyleStrokeWidth.value.strokeWidth,
     );
     for (DanmakuFilterType filterType
-        in playerGetxController.danmakuConfigOptions.danmakuFilterTypeList) {
+        in playerGetxController!.danmakuConfigOptions.danmakuFilterTypeList) {
       switch (filterType.enName) {
         case "fixedTop":
           danmakuOptions.fixedTopDanmakuVisibility = !filterType.filter.value;
@@ -96,7 +100,21 @@ class DanmakuFlameMaster extends IDanmaku {
           break;
       }
     }
+    if (start &&
+        playerGetxController!
+                .playConfigOptions.positionDuration.value.inMilliseconds >
+            0) {
+      danmakuOptions.startPosition = playerGetxController!
+          .playConfigOptions.positionDuration.value.inMilliseconds
+          .toString();
+    }
     return danmakuOptions;
+  }
+
+  @override
+  void loadDanmakuByPath(String path,
+      {bool fromAssets = false, bool start = false, int? startMs}) {
+    // TODO: implement loadDanmakuByPath
   }
 
   // 发送弹幕
@@ -119,25 +137,25 @@ class DanmakuFlameMaster extends IDanmaku {
 
   // 启动弹幕
   @override
-  Future<bool?> startDanmaku({double? startTime}) {
-    playerGetxController.logger.d("进入启动弹幕方法");
-    if (!playerGetxController.danmakuConfigOptions.initialized.value ||
-        playerGetxController.danmakuConfigOptions.danmakuView.value == null) {
-      playerGetxController.danmakuControl.initDanmaku();
+  Future<bool?> startDanmaku({int? startTime}) {
+    playerGetxController!.logger.d("进入启动弹幕方法");
+    if (!playerGetxController!.danmakuConfigOptions.initialized.value ||
+        playerGetxController!.danmakuConfigOptions.danmakuView.value == null) {
+      playerGetxController!.danmakuControl.initDanmaku();
     }
 
     try {
-      playerGetxController.logger.d("启动弹幕");
-      int adjust = playerGetxController
+      playerGetxController!.logger.d("启动弹幕");
+      int adjust = playerGetxController!
           .danmakuConfigOptions.adjustTime.value.seconds.inMilliseconds;
       danmakuController?.startDanmaku(startTime == null
-          ? (playerGetxController
+          ? (playerGetxController!
                   .playConfigOptions.positionDuration.value.inMilliseconds +
               adjust)
-          : (startTime + adjust).floor());
+          : startTime + adjust);
     } catch (e) {
-      playerGetxController.danmakuConfigOptions.errorMsg("启动弹幕失败：$e");
-      playerGetxController.logger
+      playerGetxController!.danmakuConfigOptions.errorMsg("启动弹幕失败：$e");
+      playerGetxController!.logger
           .d("${LoggerTag.danmakuLog}startDanmaku，启动弹幕失败：$e");
       return Future.value(false);
     }
@@ -150,8 +168,8 @@ class DanmakuFlameMaster extends IDanmaku {
     try {
       danmakuController?.pauseDanmaKu();
     } catch (e) {
-      playerGetxController.danmakuConfigOptions.errorMsg("暂停弹幕失败：$e");
-      playerGetxController.logger
+      playerGetxController!.danmakuConfigOptions.errorMsg("暂停弹幕失败：$e");
+      playerGetxController!.logger
           .d("${LoggerTag.danmakuLog}pauseDanmaku，暂停弹幕失败：$e");
       return Future.value(false);
     }
@@ -164,8 +182,8 @@ class DanmakuFlameMaster extends IDanmaku {
     try {
       danmakuController?.resumeDanmaku();
     } catch (e) {
-      playerGetxController.danmakuConfigOptions.errorMsg("继续弹幕失败：$e");
-      playerGetxController.logger
+      playerGetxController!.danmakuConfigOptions.errorMsg("继续弹幕失败：$e");
+      playerGetxController!.logger
           .d("${LoggerTag.danmakuLog}resumeDanmaku，继续弹幕失败：$e");
       return Future.value(false);
     }
@@ -174,22 +192,20 @@ class DanmakuFlameMaster extends IDanmaku {
 
   // 弹幕跳转
   @override
-  Future<bool?> danmakuSeekTo(double time) {
-    if (!playerGetxController.playConfigOptions.initialized.value ||
-        playerGetxController.playConfigOptions.finished.value) {
+  Future<bool?> danmakuSeekTo(int time) {
+    if (!playerGetxController!.playConfigOptions.initialized.value ||
+        playerGetxController!.playConfigOptions.finished.value) {
       return Future.value(true);
     }
     try {
-      danmakuController?.danmaKuSeekTo((time.seconds +
-              playerGetxController
-                  .danmakuConfigOptions.adjustTime.value.seconds)
-          .inMilliseconds
-          .floor());
-      playerGetxController.logger.d(
-          "弹幕跳转毫秒${(time.seconds + playerGetxController.danmakuConfigOptions.adjustTime.value.seconds).inMilliseconds.floor()}");
+      danmakuController?.danmaKuSeekTo(time +
+          playerGetxController!
+              .danmakuConfigOptions.adjustTime.value.seconds.inMilliseconds);
+      playerGetxController!.logger.d(
+          "弹幕跳转毫秒${(time.seconds + playerGetxController!.danmakuConfigOptions.adjustTime.value.seconds).inMilliseconds.floor()}");
     } catch (e) {
-      playerGetxController.danmakuConfigOptions.errorMsg("弹幕跳转失败：$e");
-      playerGetxController.logger
+      playerGetxController!.danmakuConfigOptions.errorMsg("弹幕跳转失败：$e");
+      playerGetxController!.logger
           .d("${LoggerTag.danmakuLog}danmakuSeekTo，弹幕跳转失败：$e");
       return Future.value(false);
     }
@@ -199,34 +215,34 @@ class DanmakuFlameMaster extends IDanmaku {
   // 显示/隐藏弹幕
   @override
   Future<bool?> setDanmakuVisibility(bool visible) {
-    if (!playerGetxController.playConfigOptions.initialized.value ||
-        playerGetxController.playConfigOptions.finished.value) {
+    if (!playerGetxController!.playConfigOptions.initialized.value ||
+        playerGetxController!.playConfigOptions.finished.value) {
       return Future.value(true);
     }
     try {
-      playerGetxController.danmakuConfigOptions.visible(visible);
+      playerGetxController!.danmakuConfigOptions.visible(visible);
       // 如果设置显示弹幕，且视频已经初始化未播放结束，弹幕插件未初始化
       if (visible &&
-          playerGetxController.playConfigOptions.initialized.value &&
-          !playerGetxController.playConfigOptions.finished.value &&
-          (!playerGetxController.danmakuConfigOptions.initialized.value ||
-              playerGetxController.danmakuConfigOptions.danmakuView.value ==
+          playerGetxController!.playConfigOptions.initialized.value &&
+          !playerGetxController!.playConfigOptions.finished.value &&
+          (!playerGetxController!.danmakuConfigOptions.initialized.value ||
+              playerGetxController!.danmakuConfigOptions.danmakuView.value ==
                   null)) {
-        playerGetxController.danmakuControl.initDanmaku();
+        playerGetxController!.danmakuControl.initDanmaku();
         // 视频正在播放，就需要播放弹幕
-        if (playerGetxController.playConfigOptions.playing.value) {
-          playerGetxController.danmakuControl.resumeDanmaku();
+        if (playerGetxController!.playConfigOptions.playing.value) {
+          playerGetxController!.danmakuControl.resumeDanmaku();
         }
       }
       danmakuController?.setDanmaKuVisibility(visible);
     } catch (e) {
-      playerGetxController.danmakuConfigOptions.errorMsg("显示/隐藏弹幕失败：$e");
-      playerGetxController.logger
+      playerGetxController!.danmakuConfigOptions.errorMsg("显示/隐藏弹幕失败：$e");
+      playerGetxController!.logger
           .d("${LoggerTag.danmakuLog}setDanmakuVisibility，显示/隐藏弹幕失败：$e");
       return Future.value(false);
     }
-    if (playerGetxController.danmakuConfigOptions.visible.value != visible) {
-      playerGetxController.danmakuConfigOptions.visible(visible);
+    if (playerGetxController!.danmakuConfigOptions.visible.value != visible) {
+      playerGetxController!.danmakuConfigOptions.visible(visible);
     }
     return Future.value(true);
   }
@@ -238,15 +254,15 @@ class DanmakuFlameMaster extends IDanmaku {
       danmakuController?.setDanmakuAlphaRatio(
           danmakuAlphaRatio / 100.0 > 1.0 ? 1 : danmakuAlphaRatio / 100.0);
     } catch (e) {
-      playerGetxController.danmakuConfigOptions.errorMsg("设置弹幕透明度失败：$e");
-      playerGetxController.logger
+      playerGetxController!.danmakuConfigOptions.errorMsg("设置弹幕透明度失败：$e");
+      playerGetxController!.logger
           .d("${LoggerTag.danmakuLog}setDanmakuAlphaRatio，设置弹幕透明度失败：$e");
       return Future.value(false);
     }
-    if (playerGetxController
+    if (playerGetxController!
             .danmakuConfigOptions.danmakuAlphaRatio.value.ratio !=
         danmakuAlphaRatio) {
-      playerGetxController.danmakuConfigOptions.danmakuAlphaRatio.value.ratio =
+      playerGetxController!.danmakuConfigOptions.danmakuAlphaRatio.value.ratio =
           danmakuAlphaRatio;
     }
     return Future.value(true);
@@ -259,19 +275,19 @@ class DanmakuFlameMaster extends IDanmaku {
       danmakuController?.setDanmakuDisplayArea(area);
       danmakuController?.setAllowOverlap(filter);
     } catch (e) {
-      playerGetxController.danmakuConfigOptions.errorMsg("设置弹幕显示区域失败：$e");
-      playerGetxController.logger
+      playerGetxController!.danmakuConfigOptions.errorMsg("设置弹幕显示区域失败：$e");
+      playerGetxController!.logger
           .d("${LoggerTag.danmakuLog}setDanmakuArea，设置弹幕显示区域失败：$e");
       return Future.value(false);
     }
     int areaIndex =
-        playerGetxController.danmakuConfigOptions.danmakuArea.value.areaIndex;
-    List<DanmakuAreaItem> danmakuAreaItemList = playerGetxController
+        playerGetxController!.danmakuConfigOptions.danmakuArea.value.areaIndex;
+    List<DanmakuAreaItem> danmakuAreaItemList = playerGetxController!
         .danmakuConfigOptions.danmakuArea.value.danmakuAreaItemList;
     DanmakuAreaItem configItem = danmakuAreaItemList[areaIndex];
 
     if (configItem.area != area || configItem.filter != filter) {
-      playerGetxController.danmakuConfigOptions.danmakuArea.value.areaIndex =
+      playerGetxController!.danmakuConfigOptions.danmakuArea.value.areaIndex =
           areaIndex;
     }
     return Future.value(true);
@@ -283,14 +299,15 @@ class DanmakuFlameMaster extends IDanmaku {
     try {
       danmakuController?.setDanmakuFontSize(fontSizeRatio / 100);
     } catch (e) {
-      playerGetxController.danmakuConfigOptions.errorMsg("设置字体大小失败：$e");
-      playerGetxController.logger
+      playerGetxController!.danmakuConfigOptions.errorMsg("设置字体大小失败：$e");
+      playerGetxController!.logger
           .d("${LoggerTag.danmakuLog}setDanmakuFontSize，设置字体大小失败：$e");
       return Future.value(false);
     }
-    if (playerGetxController.danmakuConfigOptions.danmakuFontSize.value.ratio !=
+    if (playerGetxController!
+            .danmakuConfigOptions.danmakuFontSize.value.ratio !=
         fontSizeRatio) {
-      playerGetxController.danmakuConfigOptions.danmakuFontSize.value.ratio =
+      playerGetxController!.danmakuConfigOptions.danmakuFontSize.value.ratio =
           fontSizeRatio;
     }
     return Future.value(true);
@@ -302,15 +319,15 @@ class DanmakuFlameMaster extends IDanmaku {
     try {
       danmakuController?.setDanmakuStroke(strokeWidth);
     } catch (e) {
-      playerGetxController.danmakuConfigOptions.errorMsg("设置描边失败：$e");
-      playerGetxController.logger
+      playerGetxController!.danmakuConfigOptions.errorMsg("设置描边失败：$e");
+      playerGetxController!.logger
           .d("${LoggerTag.danmakuLog}setDanmakuStyleStrokeWidth，设置描边失败：$e");
       return Future.value(false);
     }
-    if (playerGetxController
+    if (playerGetxController!
             .danmakuConfigOptions.danmakuStyleStrokeWidth.value.strokeWidth !=
         strokeWidth) {
-      playerGetxController.danmakuConfigOptions.danmakuStyleStrokeWidth.value
+      playerGetxController!.danmakuConfigOptions.danmakuStyleStrokeWidth.value
           .strokeWidth = strokeWidth;
     }
     return Future.value(true);
@@ -318,19 +335,21 @@ class DanmakuFlameMaster extends IDanmaku {
 
   // 设置滚动速度
   @override
-  Future<bool?> setDanmakuSpeed(double speed, double playSpeed) {
+  Future<bool?> setDanmakuSpeed(int durationMs, double playSpeed) {
     try {
-      danmakuController?.setDanmakuSpeed(speed / playSpeed);
+      danmakuController
+          ?.setDanmakuSpeed(baseDurationMs / (playSpeed * durationMs));
+      debugPrint("设置速度：${(durationMs * 1000) / (playSpeed * baseDurationMs)}");
     } catch (e) {
-      playerGetxController.danmakuConfigOptions.errorMsg("设置滚动速度失败：$e");
-      playerGetxController.logger
+      playerGetxController!.danmakuConfigOptions.errorMsg("设置滚动速度失败：$e");
+      playerGetxController!.logger
           .d("${LoggerTag.danmakuLog}setDanmakuSpeed，设置滚动速度失败：$e");
       return Future.value(false);
     }
-    if (playerGetxController.danmakuConfigOptions.danmakuSpeed.value.speed !=
-        speed) {
-      playerGetxController.danmakuConfigOptions.danmakuSpeed.value.speed =
-          speed;
+    if (playerGetxController!.danmakuConfigOptions.danmakuSpeed.value.speed !=
+        durationMs) {
+      playerGetxController!.danmakuConfigOptions.danmakuSpeed.value.speed =
+          durationMs.toDouble();
     }
     return Future.value(true);
   }
@@ -341,8 +360,8 @@ class DanmakuFlameMaster extends IDanmaku {
     try {
       danmakuController?.setDuplicateMergingEnabled(!flag);
     } catch (e) {
-      playerGetxController.danmakuConfigOptions.errorMsg("设置是否启用合并重复弹幕失败：$e");
-      playerGetxController.logger.d(
+      playerGetxController!.danmakuConfigOptions.errorMsg("设置是否启用合并重复弹幕失败：$e");
+      playerGetxController!.logger.d(
           "${LoggerTag.danmakuLog}setDuplicateMergingEnabled，设置是否启用合并重复弹幕失败：$e");
       return Future.value(false);
     }
@@ -355,8 +374,8 @@ class DanmakuFlameMaster extends IDanmaku {
     try {
       danmakuController?.setFixedTopDanmakuVisibility(!visible);
     } catch (e) {
-      playerGetxController.danmakuConfigOptions.errorMsg("设置是否显示顶部固定弹幕失败：$e");
-      playerGetxController.logger.d(
+      playerGetxController!.danmakuConfigOptions.errorMsg("设置是否显示顶部固定弹幕失败：$e");
+      playerGetxController!.logger.d(
           "${LoggerTag.danmakuLog}setFixedTopDanmakuVisibility，设置是否显示顶部固定弹幕失败：$e");
       return Future.value(false);
     }
@@ -370,8 +389,8 @@ class DanmakuFlameMaster extends IDanmaku {
       danmakuController?.setL2RDanmakuVisibility(!visible);
       danmakuController?.setR2LDanmakuVisibility(!visible);
     } catch (e) {
-      playerGetxController.danmakuConfigOptions.errorMsg("设置是否显示滚动弹幕失败：$e");
-      playerGetxController.logger
+      playerGetxController!.danmakuConfigOptions.errorMsg("设置是否显示滚动弹幕失败：$e");
+      playerGetxController!.logger
           .d("${LoggerTag.danmakuLog}setRollDanmakuVisibility，设置是否显示滚动弹幕失败：$e");
       return Future.value(false);
     }
@@ -384,8 +403,8 @@ class DanmakuFlameMaster extends IDanmaku {
     try {
       danmakuController?.setFixedBottomDanmakuVisibility(!visible);
     } catch (e) {
-      playerGetxController.danmakuConfigOptions.errorMsg("设置是否显示底部固定弹幕失败：$e");
-      playerGetxController.logger.d(
+      playerGetxController!.danmakuConfigOptions.errorMsg("设置是否显示底部固定弹幕失败：$e");
+      playerGetxController!.logger.d(
           "${LoggerTag.danmakuLog}setFixedBottomDanmakuVisibility，设置是否显示底部固定弹幕失败：$e");
       return Future.value(false);
     }
@@ -398,8 +417,8 @@ class DanmakuFlameMaster extends IDanmaku {
     try {
       danmakuController?.setSpecialDanmakuVisibility(!visible);
     } catch (e) {
-      playerGetxController.danmakuConfigOptions.errorMsg("设置是否显示特殊弹幕失败：$e");
-      playerGetxController.logger.d(
+      playerGetxController!.danmakuConfigOptions.errorMsg("设置是否显示特殊弹幕失败：$e");
+      playerGetxController!.logger.d(
           "${LoggerTag.danmakuLog}setSpecialDanmakuVisibility，设置是否显示特殊弹幕失败：$e");
       return Future.value(false);
     }
@@ -412,8 +431,8 @@ class DanmakuFlameMaster extends IDanmaku {
     try {
       danmakuController?.setColorsDanmakuVisibility(!visible);
     } catch (e) {
-      playerGetxController.danmakuConfigOptions.errorMsg("设置是否显示彩色弹幕失败：$e");
-      playerGetxController.logger.d(
+      playerGetxController!.danmakuConfigOptions.errorMsg("设置是否显示彩色弹幕失败：$e");
+      playerGetxController!.logger.d(
           "${LoggerTag.danmakuLog}setColorsDanmakuVisibility，设置是否显示彩色弹幕失败：$e");
       return Future.value(false);
     }
@@ -448,5 +467,10 @@ class DanmakuFlameMaster extends IDanmaku {
 
   // 调整弹幕时间
   @override
-  void danmakuAdjustTime(double adjustTime) {}
+  void danmakuAdjustTime(int adjustTime) {}
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+  }
 }
