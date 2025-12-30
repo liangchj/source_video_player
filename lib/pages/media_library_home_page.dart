@@ -16,7 +16,7 @@ class _MediaLibraryHomePageState extends State<MediaLibraryHomePage> {
   MediaLibraryHomeState get state => _controller.state;
   @override
   void initState() {
-    _controller = MediaLibraryHomeController()..init();
+    _controller = MediaLibraryHomeController();
 
     super.initState();
   }

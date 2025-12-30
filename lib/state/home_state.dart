@@ -1,13 +1,16 @@
 
 import 'package:flutter/material.dart';
 import 'package:signals/signals.dart';
-import 'package:source_video_player/state/signals_base_state.dart';
 
 import '../pages/media_library_home_page.dart';
 import '../pages/net_resource_home_page.dart';
 import '../pages/personal_home_page.dart';
+import 'signals_base_state.dart';
 
 class HomeState extends SignalsBaseState {
+  HomeState() {
+    init();
+  }
   final Signal<TabController?> tabController = Signal(null);
   late List<Widget> tabPageList;
   final Signal<int> currentIndex = Signal<int>(1);

@@ -5,9 +5,13 @@ import '../state/home_state.dart';
 class HomeController extends BaseController {
   late HomeState state;
 
+  HomeController() {
+    init();
+  }
+
   @override
   void init() {
-    state = HomeState()..init();
+    state = HomeState();
   }
 
   @override

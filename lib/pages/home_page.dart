@@ -21,7 +21,7 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
-    _controller = HomeController()..init();
+    _controller = HomeController();
     homeState.tabController.value = TabController(
       initialIndex: homeState.currentIndex.value,
       length: homeState.tabPageList.length,

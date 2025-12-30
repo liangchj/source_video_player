@@ -1,8 +1,12 @@
 
 import 'package:flutter/material.dart';
-import 'package:source_video_player/state/signals_base_state.dart';
+
+import 'signals_base_state.dart';
 
 class MediaLibraryHomeState extends SignalsBaseState {
+  MediaLibraryHomeState() {
+    init();
+  }
   late final List<Widget> libraryList;
   @override
   void init() {
