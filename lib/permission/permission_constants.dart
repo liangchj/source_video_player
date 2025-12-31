@@ -1,12 +1,40 @@
 
+import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// 媒体库相关权限
-const List<Permission> mediaPermissions = [
+/*const List<Permission> mediaPermissions = [
   Permission.videos,  // 访问视频文件
   Permission.audio,   // 访问音频文件（可能包含弹幕）
   Permission.storage, // 通用存储权限，兼容旧版本
-];
+];*/
+
+/// 媒体库相关权限（按Android版本适配）
+Future<List<Permission>> getMediaPermissions() async {
+  // 非Android平台，直接返回视频+音频权限
+  if (defaultTargetPlatform != TargetPlatform.android) {
+    return [Permission.videos, Permission.audio];
+  }
+
+  // 获取Android系统版本
+  // final androidInfo = await _getAndroidSdkVersion();
+  final deviceInfoPlugin = DeviceInfoPlugin();
+  var androidInfo = await deviceInfoPlugin.androidInfo;
+  // final androidInfo = Platform.version.;
+  final int sdkVersion = androidInfo.version.sdkInt ?? 30;
+
+  // Android 13+（API 33+）：使用细分媒体权限，移除storage
+  if (sdkVersion >= 33) {
+    return [Permission.videos, Permission.audio];
+  }
+
+  // Android 12及以下：使用storage权限（兼容旧版本）
+  return [Permission.storage];
+}
+
 
 /// 权限设置页面路由
 const String permissionSettingsRoute = '/permission-settings';

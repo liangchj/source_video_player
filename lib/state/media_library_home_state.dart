@@ -1,6 +1,11 @@
 
-import 'package:flutter/material.dart';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:source_video_player/route/app_pages.dart';
+
+import '../route/app_router.dart';
 import '../route/locator.dart';
 import 'signals_base_state.dart';
 
@@ -12,16 +17,19 @@ class MediaLibraryHomeState extends SignalsBaseState {
   @override
   void init() {
     libraryList = [
-      InkWell(
-        onTap: () {
-          // Get.toNamed(AppRoutes.localMediaDirectoryList);
-          // Get.to(() => LocalMediaDirectoryListPage());
-        },
-        child: const ListTile(
-          leading: Icon(Icons.phone_android_rounded),
-          title: Text("本地媒体"),
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS))
+        InkWell(
+          onTap: () {
+            // appGoRouter.pushNamed(AppPages.localMediaLibraryPage);
+            locator<AppRouter>().router.push(AppPages.localMediaLibraryPage);
+            // Get.toNamed(AppRoutes.localMediaDirectoryList);
+            // Get.to(() => LocalMediaDirectoryListPage());
+          },
+          child: const ListTile(
+            leading: Icon(Icons.phone_android_rounded),
+            title: Text("本地媒体"),
+          ),
         ),
-      ),
       InkWell(
         onTap: () {
           // Get.toNamed(AppRoutes.playDirectoryList);

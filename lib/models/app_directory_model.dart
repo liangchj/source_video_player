@@ -1,20 +1,22 @@
 import 'dart:io';
 
+
 /// 目录
 /// 加上前缀app，避免和系统目录冲突
-class AppDirectoryModel {
+class AppDirectoryModel<T> {
   AppDirectoryModel({
     required this.path,
     required this.name,
     this.fileNumber = 0,
     this.appDirectorySourceType = AppDirectorySourceType.localDirectory,
+    this.assetPathEntity,
   });
 
   final String path;
   String name;
   int fileNumber;
   AppDirectorySourceType appDirectorySourceType;
-  // AssetPathEntity? assetPathEntity;
+  T? assetPathEntity;
 
   factory AppDirectoryModel.fromJson(Map<String, dynamic> json) =>
       AppDirectoryModel(

@@ -13,6 +13,11 @@ class LocalMediaLibraryListState extends SignalsBaseState {
   );
 
   final Signal<List<AppDirectoryModel>> localVideoDirectoryList = Signal([]);
+
+
+  final Signal<bool> isCheckingPermission = Signal(true);
+  final Signal<bool> canAccessMediaLibrary = Signal(true);
+
   @override
   void init() {
     // TODO: implement init
@@ -21,5 +26,7 @@ class LocalMediaLibraryListState extends SignalsBaseState {
   void dispose() {
     loadingState.dispose();
     localVideoDirectoryList.dispose();
+    isCheckingPermission.dispose();
+    canAccessMediaLibrary.dispose();
   }
 }

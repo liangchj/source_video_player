@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import '../platform/platform_asset_entitry.dart';
+import '../platform/platform_asset_entity.dart';
 
 enum AppMediaFileSourceType { localFile, playListFile }
 

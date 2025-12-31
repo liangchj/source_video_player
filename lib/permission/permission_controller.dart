@@ -22,10 +22,9 @@ class PermissionController {
     bool hasPermission = await _permissionService.hasMediaPermissions();
 
     if (!hasPermission) {
-      hasPermission = await _permissionService.checkMediaPermissions();
-      _hasMediaPermission.value = hasPermission;
+      hasPermission = await _permissionService.requestMediaPermissions();
     }
-
+    _hasMediaPermission.value = hasPermission;
     return hasPermission;
   }
 
