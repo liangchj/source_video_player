@@ -1,10 +1,10 @@
-import 'package:source_video_player/controller/base_controller.dart';
+import 'package:source_video_player/view_model/base_view_model.dart';
 
 import '../state/local_media_library_list_state.dart';
 
-class LocalMediaLibraryListController extends BaseController {
+class LocalMediaLibraryListViewModel extends BaseViewModel{
   late LocalMediaLibraryListState state;
-  LocalMediaLibraryListController() {
+  LocalMediaLibraryListViewModel() {
     init();
   }
   @override

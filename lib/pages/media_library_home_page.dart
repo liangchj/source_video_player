@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:source_video_player/view_model/media_library_home_view_model.dart';
 
-import '../controller/media_library_home_controller.dart';
 import '../state/media_library_home_state.dart';
 
 class MediaLibraryHomePage extends StatefulWidget {
@@ -12,18 +12,18 @@ class MediaLibraryHomePage extends StatefulWidget {
 }
 
 class _MediaLibraryHomePageState extends State<MediaLibraryHomePage> {
-  late MediaLibraryHomeController _controller;
-  MediaLibraryHomeState get state => _controller.state;
+  late MediaLibraryHomeViewModel viewModel;
+  MediaLibraryHomeState get state => viewModel.state;
   @override
   void initState() {
-    _controller = MediaLibraryHomeController();
+    viewModel = MediaLibraryHomeViewModel();
 
     super.initState();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    viewModel.dispose();
     super.dispose();
   }
 

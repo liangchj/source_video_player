@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:signals/signals_flutter.dart';
+import 'package:source_video_player/view_model/local_media_library_list_view_model.dart';
 
-import '../../controller/local_media_library_list_controller.dart';
 import '../../permission/permission_constants.dart';
 import '../../permission/permission_controller.dart';
 import '../../permission/permission_request_dialog.dart';
@@ -18,8 +18,8 @@ class LocalMediaDirectoryListPage extends StatefulWidget {
 
 class _LocalMediaDirectoryListPageState
     extends State<LocalMediaDirectoryListPage> {
-  late LocalMediaLibraryListController _controller;
-  LocalMediaLibraryListState get state => _controller.state;
+  late LocalMediaLibraryListViewModel viewModel;
+  LocalMediaLibraryListState get state => viewModel.state;
 
   bool _isCheckingPermission = true;
   bool _canAccessMediaLibrary = false;
@@ -27,13 +27,13 @@ class _LocalMediaDirectoryListPageState
   @override
   void initState() {
     super.initState();
-    _controller = LocalMediaLibraryListController();
+    viewModel = LocalMediaLibraryListViewModel();
     _checkPermission();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    viewModel.dispose();
     super.dispose();
   }
 
@@ -67,7 +67,6 @@ class _LocalMediaDirectoryListPageState
 
     setState(() => _isCheckingPermission = false);
   }
-
 
   @override
   Widget build(BuildContext context) {

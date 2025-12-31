@@ -1,14 +1,13 @@
-import 'package:source_video_player/controller/base_controller.dart';
+
+import 'package:source_video_player/view_model/base_view_model.dart';
 
 import '../state/home_state.dart';
 
-class HomeController extends BaseController {
+class HomeViewModel extends BaseViewModel {
   late HomeState state;
-
-  HomeController() {
+  HomeViewModel() {
     init();
   }
-
   @override
   void init() {
     state = HomeState();
@@ -18,4 +17,5 @@ class HomeController extends BaseController {
   void dispose() {
     state.dispose();
   }
+
 }

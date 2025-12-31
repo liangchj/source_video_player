@@ -2,8 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:signals/signals_flutter.dart';
+import 'package:source_video_player/view_model/home_view_model.dart';
 
-import '../controller/home_controller.dart';
 import '../state/home_state.dart';
 
 class HomePage extends StatefulWidget {
@@ -15,13 +15,13 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  late HomeController _controller;
-  HomeState get homeState => _controller.state;
+  late HomeViewModel viewModel;
+  HomeState get homeState => viewModel.state;
 
   @override
   void initState() {
     super.initState();
-    _controller = HomeController();
+    viewModel = HomeViewModel();
     homeState.tabController.value = TabController(
       initialIndex: homeState.currentIndex.value,
       length: homeState.tabPageList.length,
@@ -31,7 +31,7 @@ class _HomePageState extends State<HomePage>
 
   @override
   void dispose() {
-    _controller.dispose();
+    viewModel.dispose();
     super.dispose();
   }
 
