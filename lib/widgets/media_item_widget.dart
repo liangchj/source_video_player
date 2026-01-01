@@ -2,10 +2,12 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:signals/signals_flutter.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
 import '../commons/widget_style_commons.dart';
 import '../models/app_media_file_model.dart';
+import '../utils/bottom_sheet_dialog_utils.dart';
+import '../utils/logger_utils.dart';
 import 'time_format_utils.dart';
 
 class MediaItemWidget extends StatelessWidget {
@@ -18,7 +20,7 @@ class MediaItemWidget extends StatelessWidget {
     this.onTap,
   });
 
-  final Signal<AppMediaFileModel> fileModel;
+  final AppMediaFileModel fileModel;
   final Widget? leadingWidget;
   final Widget? subtitleWidget;
   final Widget? trailingWidget;
@@ -28,7 +30,7 @@ class MediaItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () => onTap?.call(),
-      child: Watch((context) => ListTile(
+      child: ListTile(
         horizontalTitleGap: WidgetStyleCommons.safeSpace / 2,
         contentPadding: EdgeInsets.only(
           left: WidgetStyleCommons.safeSpace,
@@ -38,12 +40,23 @@ class MediaItemWidget extends StatelessWidget {
         title: _buildTitle(),
         subtitle: _buildSubtitle(),
         trailing: trailingWidget ?? _buildRightOperateIcon(context),
-      )),
+      ),
+      /*child: Watch((context) => ListTile(
+        horizontalTitleGap: WidgetStyleCommons.safeSpace / 2,
+        contentPadding: EdgeInsets.only(
+          left: WidgetStyleCommons.safeSpace,
+          right: 0,
+        ),
+        leading: _buildLeadingWidget(context),
+        title: _buildTitle(),
+        subtitle: _buildSubtitle(),
+        trailing: trailingWidget ?? _buildRightOperateIcon(context),
+      )),*/
     );
   }
 
   _buildLeadingWidget(BuildContext context) {
-    var duration = fileModel.value.assetEntity?.duration;
+    var duration = fileModel.assetEntity?.duration;
     return leadingWidget ??
         SizedBox(
           width: 80,
@@ -67,7 +80,7 @@ class MediaItemWidget extends StatelessWidget {
                         ),
                 ),
               ),
-              if (fileModel.value.playHistoryDuration != null && duration != null)
+              if (fileModel.playHistoryDuration != null && duration != null)
                 Positioned(
                   left: 0,
                   right: 0,
@@ -78,7 +91,7 @@ class MediaItemWidget extends StatelessWidget {
                       backgroundColor: Theme.of(context).primaryColor,
                       valueColor: AlwaysStoppedAnimation(Colors.blue),
                       value:
-                          fileModel.value.playHistoryDuration!.inSeconds / duration,
+                          fileModel.playHistoryDuration!.inSeconds / duration,
                     ),
                   ),
                 ),
@@ -100,12 +113,12 @@ class MediaItemWidget extends StatelessWidget {
   // 构建视频缩略图
   Future<Widget> _buildVideoThumbnail() async {
     Uint8List? thumbnail;
-    if (fileModel.value.thumbnailUint8List != null) {
-      thumbnail = fileModel.value.thumbnailUint8List!;
-    } else if (fileModel.value.assetEntity != null) {
-      thumbnail = await fileModel.value.assetEntity!.thumbnail;
-    } else if (fileModel.value.file != null) {
-      thumbnail = await fileModel.value.file!.readAsBytes();
+    if (fileModel.thumbnailUint8List != null) {
+      thumbnail = fileModel.thumbnailUint8List!;
+    } else if (fileModel.assetEntity != null) {
+      thumbnail = await fileModel.assetEntity!.thumbnail;
+    } else if (fileModel.file != null) {
+      thumbnail = await fileModel.file!.readAsBytes();
     }
     return thumbnail == null
         ? const Icon(Icons.video_library)
@@ -114,7 +127,7 @@ class MediaItemWidget extends StatelessWidget {
 
   _buildTitle() {
     return Text(
-      fileModel.value.fileName,
+      fileModel.fileName,
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
     );
@@ -127,7 +140,7 @@ class MediaItemWidget extends StatelessWidget {
 
     /// 弹幕和字幕信息
     List<Widget> subtitleList = [];
-    if (fileModel.value.danmakuPath != null && fileModel.value.danmakuPath!.isNotEmpty) {
+    if (fileModel.danmakuPath != null && fileModel.danmakuPath!.isNotEmpty) {
       subtitleList.add(
         const CircleAvatar(
           backgroundColor: Colors.blue,
@@ -136,7 +149,7 @@ class MediaItemWidget extends StatelessWidget {
         ),
       );
     }
-    if (fileModel.value.subtitlePath != null && fileModel.value.subtitlePath!.isNotEmpty) {
+    if (fileModel.subtitlePath != null && fileModel.subtitlePath!.isNotEmpty) {
       subtitleList.add(
         const CircleAvatar(
           backgroundColor: Colors.blue,
@@ -151,8 +164,8 @@ class MediaItemWidget extends StatelessWidget {
     subtitleList.add(Spacer());
 
     /*var modTime =
-        fileModel.value.assetEntity?.modifiedDateTime ??
-        fileModel.value.file?.lastModifiedSync();
+        fileModel.assetEntity?.modifiedDateTime ??
+        fileModel.file?.lastModifiedSync();
     if (modTime != null) {
       subtitleList.add(Text(DateTimeUtils.ymdhmsFormatter.format(modTime)));
     }*/
@@ -171,17 +184,18 @@ class MediaItemWidget extends StatelessWidget {
       constraints: const BoxConstraints(),
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10),
       onPressed: () {
-        /*BottomSheetDialogUtils.openBottomSheet(
-          _buildOperateListWidget(),
+        BottomSheetDialogUtils.openModalBottomSheet(
+          _buildOperateListWidget(context),
+          context: context,
           closeBtnShow: false,
-        );*/
+        );
       },
       icon: const Icon(Icons.more_vert_rounded),
     );
   }
 
   /// 操作弹窗
-  Widget _buildOperateListWidget() {
+  Widget _buildOperateListWidget(BuildContext context) {
     return SingleChildScrollView(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
@@ -202,12 +216,12 @@ class MediaItemWidget extends StatelessWidget {
                 right: 16,
                 bottom: 0,
               ),
-              child: Text(fileModel.value.fileName, textAlign: TextAlign.left),
+              child: Text(fileModel.fileName, textAlign: TextAlign.left),
             ),
             ListView(
               padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
               shrinkWrap: true,
-              children: _createOperateList(),
+              children: _createOperateList(context),
             ),
           ],
         ),
@@ -216,7 +230,7 @@ class MediaItemWidget extends StatelessWidget {
   }
 
   /// 生成操作列表
-  List<Widget> _createOperateList() {
+  List<Widget> _createOperateList(BuildContext context) {
     // name 重命名 字幕 弹幕 添加到播放列表 删除
     final ButtonStyle buttonStyle = ButtonStyle(
       alignment: Alignment.centerLeft,
@@ -226,7 +240,7 @@ class MediaItemWidget extends StatelessWidget {
       style: buttonStyle,
       icon: const Icon(Icons.edit_rounded),
       label: const Text("重命名"),
-      onPressed: () => _renameFile(),
+      onPressed: () => _renameFile(context),
     );
     Widget subtitlesWidget = TextButton.icon(
       style: buttonStyle,
@@ -256,7 +270,7 @@ class MediaItemWidget extends StatelessWidget {
         //关闭对话框
       },
     );
-    /*if (fileModel.value.fileSourceType == AppMediaFileSourceType.playListFile) {
+    /*if (fileModel.fileSourceType == AppMediaFileSourceType.playListFile) {
       return [
         playWidget,
         subtitlesWidget,
@@ -274,7 +288,7 @@ class MediaItemWidget extends StatelessWidget {
             Get.defaultDialog(
               title: "移除视频",
               radius: 6,
-              content: Text("您确定想要从播放列表中移除“${fileModel.value.fileName}”？"),
+              content: Text("您确定想要从播放列表中移除“${fileModel.fileName}”？"),
               actions: [
                 TextButton(
                   child: const Text("取消"),
@@ -288,7 +302,7 @@ class MediaItemWidget extends StatelessWidget {
                 TextButton(
                   child: const Text("移除"),
                   onPressed: () {
-                    *//*var remove = Get.find<VideoFileController>().removeVideoFromPlayDirectory(fileModel);
+                    */ /*var remove = Get.find<VideoFileController>().removeVideoFromPlayDirectory(fileModel);
                       if (remove) {
                         Get.find<PlayDirectoryListController>().removeVideoFromPlayDirectory(fileModel.directory);
                       }
@@ -300,7 +314,7 @@ class MediaItemWidget extends StatelessWidget {
                           backgroundColor: Colors.black.withOpacity(0.7),
                           textColor: Colors.white,
                           fontSize: 16.0
-                      );*//*
+                      );*/ /*
                     bool open = Get.isDialogOpen ?? false;
                     if (open) {
                       Get.back();
@@ -343,70 +357,69 @@ class MediaItemWidget extends StatelessWidget {
   }
 
   /// 重命名
-  void _renameFile() {
-    /*String oldName = fileModel.value.fileName;
-    //关闭对话框
-    bool isBottomSheetOpen = Get.isBottomSheetOpen ?? false;
-    var isDialogOpen = Get.isDialogOpen ?? false;
-    if (isBottomSheetOpen || isDialogOpen) {
-      Get.closeAllDialogsAndBottomSheets(null);
-    }
-    //定义一个controller
-    TextEditingController nameController = TextEditingController.fromValue(
-      TextEditingValue(text: oldName),
-    );
+  Future<void> _renameFile(BuildContext context) async {
+    String oldName = fileModel.fileName;
+    //关闭BottomSheet
+    BottomSheetDialogUtils.closeCurrentBottomSheet(context);
+    // 等待下一帧，确保 UI 状态更新
+    await WidgetsBinding.instance.endOfFrame;
+    if (context.mounted) {
+      //定义一个controller
+      TextEditingController nameController = TextEditingController.fromValue(
+        TextEditingValue(text: oldName),
+      );
 
-    Get.defaultDialog(
-      title: "重命名为",
-      radius: 6,
-      content: TextField(
-        controller: nameController, //设置cont
-        inputFormatters: const [], // roller
-      ),
-      actions: [
-        TextButton(
-          child: const Text("取消"),
-          onPressed: () {
-            bool open = Get.isDialogOpen ?? false;
-            if (open) {
-              Get.back();
-            }
-          },
-        ),
-        TextButton(
-          child: const Text("确定"),
-          onPressed: () {
-            var newName = nameController.text;
-            LoggerUtils.logger.d("确认变更，${nameController.text}");
-            if (newName != oldName) {
-              File file = fileModel.value.file!;
-              try {
-                String dir = fileModel.value.file!.parent.path;
-                LoggerUtils.logger.d(
-                  "重命名,$dir${Platform.pathSeparator}$newName${fileModel.value.suffix.isEmpty ? '' : '.${fileModel.value.suffix}'}}",
-                );
-                File renameSync = file.renameSync(
-                  "$dir${Platform.pathSeparator}$newName${fileModel.value.suffix.isEmpty ? '' : '.${fileModel.value.suffix}'}",
-                );
-                LoggerUtils.logger.d(
-                  "重命名成功,$renameSync,${renameSync.path},${FileSystemEntity.isFileSync(renameSync.path)}",
-                );
-                if (renameSync.existsSync()) {
-                  // Get.find<VideoFileController>().videoFileList.refresh();
-                  // Get.find<VideoFileController>().reorder();
-                }
-              } catch (e) {
-                LoggerUtils.logger.e("重命名失败:$e");
-              }
-              bool open = Get.isDialogOpen ?? false;
-              if (open) {
-                Get.closeAllDialogs();
-              }
-            }
-          }, //关闭对话框
-        ),
-      ],
-    );*/
+      showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text("重命名为"),
+            content: TextField(
+              controller: nameController, //设置cont
+              inputFormatters: const [], // roller
+            ),
+            actions: [
+              TextButton(
+                child: const Text("取消"),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              TextButton(
+                child: const Text("确定"),
+                onPressed: () {
+                  var newName = nameController.text;
+                  LoggerUtils.logger.d("确认变更，${nameController.text}");
+                  if (newName != oldName) {
+                    File file = fileModel.file!;
+                    try {
+                      String dir = fileModel.file!.parent.path;
+                      LoggerUtils.logger.d(
+                        "重命名,$dir${Platform.pathSeparator}$newName${fileModel.suffix.isEmpty ? '' : '.${fileModel.suffix}'}}",
+                      );
+                      File renameSync = file.renameSync(
+                        "$dir${Platform.pathSeparator}$newName${fileModel.suffix.isEmpty ? '' : '.${fileModel.suffix}'}",
+                      );
+                      LoggerUtils.logger.d(
+                        "重命名成功,$renameSync,${renameSync.path},${FileSystemEntity.isFileSync(renameSync.path)}",
+                      );
+                      if (renameSync.existsSync()) {
+                        SmartDialog.showToast('重命名成功');
+                        // Get.find<VideoFileController>().videoFileList.refresh();
+                        // Get.find<VideoFileController>().reorder();
+                      }
+                    } catch (e) {
+                      LoggerUtils.logger.e("重命名失败:$e");
+                      SmartDialog.showToast('重命名失败：$e');
+                    }
+                    //关闭对话框并返回true
+                    Navigator.of(context).pop(true);
+                  }
+                }, //关闭对话框
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   /// 添加到播放列表

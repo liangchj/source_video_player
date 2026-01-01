@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:signals/signals_flutter.dart';
+import 'package:source_video_player/route/app_pages.dart';
 import 'package:source_video_player/view_model/local_media_library_list_view_model.dart';
 
 import '../../permission/permission_constants.dart';
 import '../../permission/permission_controller.dart';
 import '../../permission/permission_request_dialog.dart';
+import '../../route/locator.dart';
 import '../../state/local_media_library_list_state.dart';
 import '../../widgets/directory_item_widget.dart';
 
@@ -124,6 +126,7 @@ class _LocalMediaDirectoryListPageState
                       return DirectoryItemWidget(
                         directoryModel: fileDirectoryModel,
                         onTap: () {
+                          appGoRouter.push(AppPages.mediaListPage, extra: fileDirectoryModel);
                           // Get.toNamed(AppRoutes.mediaList, arguments: fileDirectoryModel);
                         },
                       );

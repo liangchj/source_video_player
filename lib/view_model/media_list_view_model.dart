@@ -1,7 +1,11 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_player_ui/flutter_player_ui.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
+import 'package:media_kit/media_kit.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:signals/signals.dart';
+import 'package:source_video_player/player/media_kit_player.dart';
 
 import '../models/app_directory_model.dart';
 import '../models/app_media_file_model.dart';
@@ -17,7 +21,7 @@ class MediaListViewModel extends BaseViewModel {
 
   final Signal<LoadingStateModel> loadingState = Signal(LoadingStateModel());
 
-  late PagingController<int, Signal<AppMediaFileModel>> pagingController;
+  late PagingController<int, AppMediaFileModel> pagingController;
 
   MediaListViewModel(this.folder) {
     init();
@@ -37,8 +41,8 @@ class MediaListViewModel extends BaseViewModel {
         errorMsg: null,
       );
     }
-    pagingController = PagingController<int, Signal<AppMediaFileModel>>(
-      getNextPageKey: (PagingState<int, Signal<AppMediaFileModel>> state) {
+    pagingController = PagingController<int, AppMediaFileModel>(
+      getNextPageKey: (PagingState<int, AppMediaFileModel> state) {
         if (!state.hasNextPage || state.lastPageIsEmpty) return null;
         return state.nextIntPageKey;
       },
@@ -86,14 +90,13 @@ class MediaListViewModel extends BaseViewModel {
     );
   }
 
-  Future<List<Signal<AppMediaFileModel>>> _fetchVideosInFolder(
+  Future<List<AppMediaFileModel>> _fetchVideosInFolder(
     int page, {
     int limit = 20,
   }) async {
-    List<Signal<AppMediaFileModel>> mediaFileList = [];
+    List<AppMediaFileModel> mediaFileList = [];
     if (folder == null ||
-        folder!.assetPathEntity == null ||
-        folder!.assetPathEntity!.assetPathEntity! is AssetPathEntity) {
+        folder!.assetPathEntity == null) {
       return mediaFileList;
     }
     List<AssetEntity> assetEntityList =
@@ -116,19 +119,66 @@ class MediaListViewModel extends BaseViewModel {
       // var subtitlePaths = GStorage.subtitlePaths.get(key);
       // var subtitlePath = subtitlePaths?.path;
       mediaFileList.add(
-        signal(
           AppMediaFileModel(
             // assetEntity: item,
-            assetEntity: AssetEntityModel(assetEntity: item),
+            assetEntity: AssetEntityModel(entity: item),
             // danmakuPath: danmakuPath,
             // subtitlePath: subtitlePath,
             file: file,
           ),
-        ),
+
       );
     }
     return mediaFileList;
   }
 
-  playVideo(AppMediaFileModel value) {}
+  playVideo(AppMediaFileModel mediaFileModel, BuildContext context) async {
+    var pages = pagingController.pages ?? [];
+    if (pages.isEmpty) {
+      return;
+    }
+    int index = -1;
+    List<ChapterModel> chapterList = [];
+    int i = 0;
+    for (var list in pages) {
+      for (var item in list) {
+        if (mediaFileModel == item) {
+          index = i;
+        }
+        String name = "";
+        if (item.file != null) {
+          name = item.file!.path.substring(
+            item.file!.path.lastIndexOf("/") + 1,
+          );
+          name = name.substring(0, name.lastIndexOf("."));
+        } else {
+          name = item.assetEntity?.title ?? "";
+        }
+        var mediaUrl = await item.assetEntity?.mediaUrl;
+        bool activated = item.assetEntity?.id == item.assetEntity?.id;
+        /*if (item.danmakuPath == null || item.danmakuPath == "") {
+          item.danmakuPath = "/storage/emulated/0/1/1.xml";
+        }*/
+        chapterList.add(
+          ChapterModel(
+            name: name,
+            index: i,
+            playUrl: mediaUrl ?? item.file?.path,
+            activated: activated,
+            // mediaFileModel: item,
+          ),
+        );
+        i++;
+      }
+    }
+    if (context.mounted) {
+      MediaKit.ensureInitialized();
+      IPlayer player = MediaKitPlayer();
+      PlayerUtils.openLocalVideo(
+        context: context,
+        player: player,
+        chapterList: chapterList,
+      );
+    }
+  }
 }

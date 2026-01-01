@@ -28,7 +28,10 @@ Future<List<Permission>> getMediaPermissions() async {
 
   // Android 13+（API 33+）：使用细分媒体权限，移除storage
   if (sdkVersion >= 33) {
-    return [Permission.videos, Permission.audio];
+    return [Permission.videos, Permission.audio, Permission.manageExternalStorage];
+  } else if (sdkVersion >= 30) {
+    // Android 11-12: 需要 MANAGE_EXTERNAL_STORAGE 权限
+    return [Permission.manageExternalStorage];
   }
 
   // Android 12及以下：使用storage权限（兼容旧版本）

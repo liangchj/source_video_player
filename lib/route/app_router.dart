@@ -27,7 +27,7 @@ class AppRouter {
           path: AppPages.mediaListPage,
           builder: (context, state) {
             final folder = state.extra is AppDirectoryModel ? state.extra as AppDirectoryModel : null;
-            return MediaListPage();
+            return MediaListPage(folder:  folder,);
           },
         ),
       ],

@@ -3,7 +3,9 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:media_kit/media_kit.dart';
 
 import 'permission/permission_controller.dart';
 import 'permission/permission_service.dart';
@@ -12,7 +14,23 @@ import 'route/locator.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  MediaKit.ensureInitialized;
   // CommonCache();
+
+  await Future.wait(
+    [
+      SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual,
+        overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
+      ),
+      SystemChrome.setPreferredOrientations(
+        [
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.portraitDown,
+        ],
+      ),
+    ],
+  );
 
   // 1. 初始化 GetIt
   setupLocator();

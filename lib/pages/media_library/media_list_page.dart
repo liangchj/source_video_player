@@ -70,7 +70,7 @@ class _MediaListPageState extends State<MediaListPage> {
   }
 
   CustomScrollView _customScrollView(
-    PagingState<int, Signal<AppMediaFileModel>> state,
+    PagingState<int, AppMediaFileModel> state,
     NextPageCallback fetchNextPage,
   ) {
     return CustomScrollView(
@@ -83,7 +83,7 @@ class _MediaListPageState extends State<MediaListPage> {
               child: Center(child: CircularProgressIndicator()),
             ),
           ),*/
-        PagedSliverList<int, Signal<AppMediaFileModel>>.separated(
+        PagedSliverList<int, AppMediaFileModel>.separated(
           state: state,
           fetchNextPage: fetchNextPage,
           itemExtent: 48,
@@ -91,7 +91,7 @@ class _MediaListPageState extends State<MediaListPage> {
             animateTransitions: true,
             itemBuilder: (context, item, index) => MediaItemWidget(
               fileModel: item,
-              onTap: () => _viewModel.playVideo(item.value),
+              onTap: () => _viewModel.playVideo(item, context),
             ),
             // _mediaListTile(item),
             firstPageErrorIndicatorBuilder: (context) => CustomFirstPageError(
