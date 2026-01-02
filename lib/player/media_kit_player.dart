@@ -7,7 +7,7 @@ import 'package:signals/signals_flutter.dart';
 class MediaKitPlayer extends IPlayer {
   late final Player _player;
   late VideoController _videoController;
-  MediaKitPlayer({super.playerController}) {
+  MediaKitPlayer({super.playerViewModel}) {
     _player = Player();
     _videoController = VideoController(_player);
   }
@@ -17,24 +17,24 @@ class MediaKitPlayer extends IPlayer {
   Future<void> onInitPlayer() async {
     try {
       /*_videoController.player.open(
-        Media(playerController?.playerState.playUrl),
+        Media(playerViewModel?.playerState.playUrl),
         // Media("https://user-images.githubusercontent.com/28951144/229373695-22f88f13-d18f-4288-9bf1-c3e078d83722.mp4"),
-        play: playerController?.playerState.autoPlay,
+        play: playerViewModel?.playerState.autoPlay,
       );*/
       _videoController.player.setPlaylistMode(PlaylistMode.none);
-      playerController?.playerState.playerView.value = Watch(
+      playerViewModel?.playerState.playerView.value = Watch(
         (context) => Video(
           controller: _videoController,
-          fit: playerController?.playerState.fit.value == null
+          fit: playerViewModel?.playerState.fit.value == null
               ? BoxFit.contain
               : BoxFit.values.firstWhere(
                   (e) =>
-                      e.name == playerController?.playerState.fit.value?.name,
+                      e.name == playerViewModel?.playerState.fit.value?.name,
                   orElse: () => BoxFit.contain,
                 ),
           aspectRatio:
-              playerController?.playerState.aspectRatio.value ??
-              playerController?.playerState.videoAspectRatio,
+              playerViewModel?.playerState.aspectRatio.value ??
+              playerViewModel?.playerState.videoAspectRatio,
           controls: (state) {
             return Scaffold(
               backgroundColor: Colors.transparent,
@@ -45,120 +45,173 @@ class MediaKitPlayer extends IPlayer {
       );
       updateState();
     } catch (e) {
-      /*if (playerController != null && playerController!.initialized) {
-        playerController?.playerState.playerView.value = Container();
+      /*if (playerViewModel != null && playerViewModel!.initialized) {
+        playerViewModel?.playerState.playerView.value = Container();
       }*/
     }
   }
 
   @override
   Future<void> onDisposePlayer() async {
-    playerController?.playerState.playerView.value = Container();
+    if (!playerViewModelDisposed && !playerStateDisposed) {
+      playerViewModel?.playerState.playerView.value = Container();
+    }
+    if (disposed) {
+      return;
+    }
     try {
       await _player.dispose();
+      disposed = true;
     } catch (_) {}
   }
 
   @override
   Future<void> play() async {
+    if (disposed) {
+      return;
+    }
     return await _player.play();
   }
 
   @override
   Future<void> pause() async {
+    if (disposed) {
+      return;
+    }
     return await _player.pause();
   }
 
   @override
   Future<void> stop() async {
+    if (disposed) {
+      return;
+    }
     return await _player.stop();
   }
 
   @override
   Future<void> seekTo(Duration position) async {
-    await playerController?.beforeSeekTo();
+    if (disposed) {
+      return;
+    }
+    if (!playerViewModelDisposed) {
+      await playerViewModel?.beforeSeekTo();
+    }
     await _player.seek(position);
     await for (final _ in _player.stream.position.take(1)) {}
     await Future.delayed(const Duration(milliseconds: 100));
     await for (final _ in _player.stream.position.take(1)) {}
-    await playerController?.afterSeekTo();
+    if (!playerViewModelDisposed) {
+      await playerViewModel?.afterSeekTo();
+    }
   }
 
   @override
   Future<void> setPlaySpeed(double speed) async {
+    if (disposed) {
+      return;
+    }
     return await _player.setRate(speed);
   }
 
   @override
-  bool get playing => _player.state.playing;
+  bool get playing => disposed ? false : _player.state.playing;
 
   @override
-  bool get buffering => _player.state.buffering;
+  bool get buffering => disposed ? false : _player.state.buffering;
 
   @override
-  bool get finished => _player.state.completed;
+  bool get finished => disposed ? true : _player.state.completed;
 
   @override
   void updateState() {
+    if (disposed) {
+      return;
+    }
     // 监听错误信息
     PlayerStream stream = _videoController.player.stream;
 
     stream.videoParams.listen((value) {
+      if (disposed || playerViewModelDisposed || playerStateDisposed) {
+        return;
+      }
       if (value.aspect != null) {
-        playerController?.playerState.videoAspectRatio = value.aspect!;
+        playerViewModel?.playerState.videoAspectRatio = value.aspect!;
       }
     });
     stream.error.listen((String? error) {
+      if (disposed || playerViewModelDisposed || playerStateDisposed) {
+        return;
+      }
       // 视频是否加载错误
-      playerController?.playerState.errorMsg.value = error ?? "";
+      playerViewModel?.playerState.errorMsg.value = error ?? "";
     });
 
     stream.duration.distinct().listen((value) {
-      if (value.compareTo(Duration.zero) != 0) {
-        playerController?.playerState.isInitialized.value = true;
+      if (disposed || playerViewModelDisposed || playerStateDisposed) {
+        return;
       }
-      playerController?.playerState.duration.value = value;
+      if (value.compareTo(Duration.zero) != 0) {
+        playerViewModel?.playerState.isInitialized.value = true;
+      }
+      playerViewModel?.playerState.duration.value = value;
     });
 
     stream.playing.listen((value) {
-      playerController?.playerState.isPlaying.value = value;
+      if (disposed || playerViewModelDisposed || playerStateDisposed) {
+        return;
+      }
+      playerViewModel?.playerState.isPlaying.value = value;
       if (value) {
-        playerController?.playerState.errorMsg.value = "";
+        playerViewModel?.playerState.errorMsg.value = "";
       }
     });
 
     stream.buffering.listen((value) {
-      playerController?.playerState.isBuffering.value = value;
+      if (disposed || playerViewModelDisposed || playerStateDisposed) {
+        return;
+      }
+      playerViewModel?.playerState.isBuffering.value = value;
     });
 
     stream.completed.listen((value) {
-      playerController?.playerState.isFinished.value = value;
+      if (disposed || playerViewModelDisposed || playerStateDisposed) {
+        return;
+      }
+      playerViewModel?.playerState.isFinished.value = value;
     });
 
-    stream.rate.listen(
-      (value) => playerController?.playerState.playSpeed.value = value,
-    );
+    stream.rate.listen((value) {
+      if (disposed || playerViewModelDisposed || playerStateDisposed) {
+        return;
+      }
+      playerViewModel?.playerState.playSpeed.value = value;
+    });
 
     // 监听进度
     stream.position.listen((Duration? position) {
+      if (disposed || playerViewModelDisposed || playerStateDisposed) {
+        return;
+      }
       if (position != null &&
-          playerController != null &&
-          !playerController!.playerState.isSeeking.value &&
+          playerViewModel != null &&
+          !playerViewModel!.playerState.isSeeking.value &&
           !_videoController.player.state.buffering) {
         // 防抖：至少间隔 200ms 才更新
         DateTime now = DateTime.now();
         if (_lastPositionUpdate == null ||
-            now.difference(_lastPositionUpdate!) >= Duration(milliseconds: 200)) {
+            now.difference(_lastPositionUpdate!) >=
+                Duration(milliseconds: 200)) {
           _lastPositionUpdate = now;
           var state = _videoController.player.state;
           bool isFinished = state.completed;
           // 监听是否播放完成
-          playerController?.playerState.isFinished.value = isFinished;
+          playerViewModel?.playerState.isFinished.value = isFinished;
 
           if (isFinished) {
-            playerController?.playerState.positionDuration.value = position;
+            playerViewModel?.playerState.positionDuration.value = position;
           } else {
-            playerController?.playerState.positionDuration.value = Duration(
+            playerViewModel?.playerState.positionDuration.value = Duration(
               seconds: position.inSeconds,
             );
           }
@@ -171,43 +224,48 @@ class MediaKitPlayer extends IPlayer {
 
   @override
   Future<void> changeVideoUrl({bool autoPlay = true}) async {
+    if (disposed || playerViewModelDisposed || playerStateDisposed || resourceDisposed) {
+      return;
+    }
     await _videoController.player.stop();
-    if (playerController != null &&
-        playerController?.resourceState.playingChapter != null &&
-        (playerController?.resourceState.playingChapter!.playUrl ?? "")
+    if (playerViewModel != null &&
+        playerViewModel?.resourceState.playingChapter != null &&
+        (playerViewModel?.resourceState.playingChapter!.playUrl ?? "")
             .isNotEmpty) {
       try {
         Map<String, String> httpHeaders =
-            playerController?.resourceState.playingChapter!.httpHeaders ?? {};
+            playerViewModel?.resourceState.playingChapter!.httpHeaders ?? {};
         if (!httpHeaders.containsKey("user-agent")) {
           // httpHeaders["user-agent"] = DioUtils.getRandomUA();
         }
         await _videoController.player.open(
           Media(
-            playerController!.resourceState.playingChapter!.playUrl!,
-            extras: playerController?.resourceState.playingChapter!.extras,
+            playerViewModel!.resourceState.playingChapter!.playUrl!,
+            extras: playerViewModel?.resourceState.playingChapter!.extras,
             httpHeaders: httpHeaders,
-            start: playerController?.resourceState.playingChapter!.start,
+            start: playerViewModel?.resourceState.playingChapter!.start,
           ),
           play: autoPlay,
         );
       } catch (e) {
-        playerController?.playerState.errorMsg.value = "播放链接异常：${e.toString()}";
+        playerViewModel?.playerState.errorMsg.value = "播放链接异常：${e.toString()}";
       }
     } else {
-      playerController?.playerState.errorMsg.value = "播放链接为空";
+      playerViewModel?.playerState.errorMsg.value = "播放链接为空";
     }
   }
 
   @override
   Future<void> dispose() async {
+    if (disposed) {
+      return;
+    }
     _videoController.player.dispose();
+    disposed = true;
   }
 
   @override
-  IPlayer copyWith({PlayerController? playerController}) {
-    return MediaKitPlayer(
-      playerController: playerController,
-    );
+  IPlayer copyWith({PlayerViewModel? playerViewModel}) {
+    return MediaKitPlayer(playerViewModel: playerViewModel);
   }
 }

@@ -58,6 +58,7 @@ class MediaListViewModel extends BaseViewModel {
   @override
   void dispose() {
     loadingState.dispose();
+
     /// 取消事件通知订阅。
     PhotoManager.stopChangeNotify();
     // 移除监听，避免内存泄漏
@@ -95,8 +96,7 @@ class MediaListViewModel extends BaseViewModel {
     int limit = 20,
   }) async {
     List<AppMediaFileModel> mediaFileList = [];
-    if (folder == null ||
-        folder!.assetPathEntity == null) {
+    if (folder == null || folder!.assetPathEntity == null) {
       return mediaFileList;
     }
     List<AssetEntity> assetEntityList =
@@ -119,31 +119,50 @@ class MediaListViewModel extends BaseViewModel {
       // var subtitlePaths = GStorage.subtitlePaths.get(key);
       // var subtitlePath = subtitlePaths?.path;
       mediaFileList.add(
-          AppMediaFileModel(
-            // assetEntity: item,
-            assetEntity: AssetEntityModel(entity: item),
-            // danmakuPath: danmakuPath,
-            // subtitlePath: subtitlePath,
-            file: file,
-          ),
-
+        AppMediaFileModel(
+          // assetEntity: item,
+          assetEntity: AssetEntityModel(entity: item),
+          // danmakuPath: danmakuPath,
+          // subtitlePath: subtitlePath,
+          file: file,
+        ),
       );
     }
     return mediaFileList;
   }
 
-  playVideo(AppMediaFileModel mediaFileModel, BuildContext context) async {
+  // 辅助方法：加载所有页面
+  Future<void> _loadAllPages() async {
+    while (pagingController.hasNextPage &&
+        (pagingController.error == null ||
+            pagingController.error is! Exception)) {
+      pagingController.fetchNextPage();
+      // 避免阻塞UI线程
+      await Future.delayed(Duration(milliseconds: 50));
+    }
+  }
+
+  Future<List<ChapterModel>> getChapterList({
+    int pageStartIndex = 0,
+    AppMediaFileModel? activeMediaFileModel,
+    int startIndex = 0,
+  }) async {
+    List<ChapterModel> chapterList = [];
     var pages = pagingController.pages ?? [];
     if (pages.isEmpty) {
-      return;
+      return chapterList;
     }
-    int index = -1;
-    List<ChapterModel> chapterList = [];
-    int i = 0;
-    for (var list in pages) {
+    int globalIndex = startIndex;
+    for (
+      int pageIndex = pageStartIndex;
+      pageIndex < pages.length;
+      pageIndex++
+    ) {
+      var list = pages[pageIndex];
       for (var item in list) {
-        if (mediaFileModel == item) {
-          index = i;
+        bool activated = false;
+        if (activeMediaFileModel != null && activeMediaFileModel == item) {
+          activated = true;
         }
         String name = "";
         if (item.file != null) {
@@ -155,30 +174,78 @@ class MediaListViewModel extends BaseViewModel {
           name = item.assetEntity?.title ?? "";
         }
         var mediaUrl = await item.assetEntity?.mediaUrl;
-        bool activated = item.assetEntity?.id == item.assetEntity?.id;
         /*if (item.danmakuPath == null || item.danmakuPath == "") {
           item.danmakuPath = "/storage/emulated/0/1/1.xml";
         }*/
         chapterList.add(
           ChapterModel(
             name: name,
-            index: i,
+            index: globalIndex,
             playUrl: mediaUrl ?? item.file?.path,
             activated: activated,
             // mediaFileModel: item,
           ),
         );
-        i++;
+        globalIndex++;
       }
     }
+    return chapterList;
+  }
+
+  playVideo(AppMediaFileModel mediaFileModel, BuildContext context) async {
+    String name = "";
+    if (mediaFileModel.file != null) {
+      name = mediaFileModel.file!.path.substring(
+        mediaFileModel.file!.path.lastIndexOf("/") + 1,
+      );
+      name = name.substring(0, name.lastIndexOf("."));
+    } else {
+      name = mediaFileModel.assetEntity?.title ?? "";
+    }
+    var mediaUrl = await mediaFileModel.assetEntity?.mediaUrl;
+
     if (context.mounted) {
       MediaKit.ensureInitialized();
       IPlayer player = MediaKitPlayer();
       PlayerUtils.openLocalVideo(
         context: context,
         player: player,
-        chapterList: chapterList,
+        chapterList: [
+          ChapterModel(
+            name: name,
+            index: 0,
+            playUrl: mediaUrl ?? mediaFileModel.file?.path,
+            activated: true,
+            // mediaFileModel: item,
+          ),
+        ],
+        chapterListLoaded: false,
+        playerViewModelCallback: (viewModel) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // 异步加载完整列表
+            _loadCompletePlaylist(mediaFileModel, viewModel);
+          });
+        },
       );
     }
   }
+
+  _loadCompletePlaylist(AppMediaFileModel currentMediaFile, PlayerViewModel playerViewModel) async {
+    var pages = pagingController.pages ?? [];
+    if (pages.isEmpty) {
+      PlayerUtils.appendResourceAndUpdateLoadingState(true, playerViewModel);
+      return;
+    }
+
+    // 分批加载，避免阻塞UI
+    await _loadAllPages();
+
+    List<ChapterModel> completeChapterList = await getChapterList(
+      startIndex: 0,
+      activeMediaFileModel: currentMediaFile,
+      pageStartIndex: 0,
+    );
+    PlayerUtils.appendResourceAndUpdateLoadingState(true, playerViewModel, chapterList: completeChapterList,);
+  }
+
 }
