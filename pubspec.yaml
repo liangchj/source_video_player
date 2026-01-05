@@ -49,6 +49,8 @@ dependencies:
   media_kit_libs_video: ^1.0.7 # Native video dependencies.
   flutter_player_ui:
     path: ../flutter_player_ui
+  path_provider: ^2.1.5
+  mmkv: ^2.3.0
 
 dev_dependencies:
   flutter_test:

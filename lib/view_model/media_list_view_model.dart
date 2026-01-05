@@ -11,6 +11,7 @@ import '../models/app_directory_model.dart';
 import '../models/app_media_file_model.dart';
 import '../models/asset_entity_model.dart';
 import '../models/loading_state_model.dart';
+import '../storage/player_storage.dart';
 import 'base_view_model.dart';
 
 class MediaListViewModel extends BaseViewModel {
@@ -221,6 +222,7 @@ class MediaListViewModel extends BaseViewModel {
         ],
         chapterListLoaded: false,
         playerViewModelCallback: (viewModel) {
+          viewModel.dataStorage = PlayerStorage();
           WidgetsBinding.instance.addPostFrameCallback((_) {
             // 异步加载完整列表
             _loadCompletePlaylist(mediaFileModel, viewModel);
