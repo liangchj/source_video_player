@@ -110,6 +110,43 @@ class MMKVCache extends IBaseStorage {
   }
 
   @override
+  Future<bool> saveObjectList<T>(
+      String key,
+      List<T>? value,
+      {
+        String Function(T)? toJson,
+        String Function(List<T>)? listToJson,
+        bool nullRemove = true,
+      }) async {
+    assert(toJson != null || listToJson != null);
+    if (key.isEmpty) return false;
+    try {
+      // 和save方法保持一致：value为null时删除key
+      if (value == null || value.isEmpty) {
+        if (nullRemove) {
+          _mmkv.removeValue(key);
+          return true; // 删除成功也算执行成功
+        } else {
+          return false;
+        }
+      }
+      String jsonStr = "";
+      if (listToJson != null) {
+        jsonStr = listToJson.call(value);
+      }
+      else if (toJson != null) {
+        jsonStr = json.encode(List<dynamic>.from(value.map((x) => toJson.call(x))));
+      }
+      return _mmkv.encodeString(key, jsonStr);
+    } catch (e, stackTrace) {
+      LoggerUtils.logger.e(
+        "MMKV saveObjectList failed! key: $key, error: $e, stack: $stackTrace",
+      );
+      return false;
+    }
+  }
+
+  @override
   Future<String?> getString(String key) async {
     return _mmkv.decodeString(key);
   }
@@ -130,9 +167,9 @@ class MMKVCache extends IBaseStorage {
   }
 
   @override
-  Future<T?> getStringToObject<T>(
+  Future<List<T>?> getStringToObject<T>(
     String key,
-    T Function(String) fromJson,
+    T Function(Map<String, dynamic>) fromJson,
   ) async {
     if (key.isEmpty) {
       return null;
@@ -141,7 +178,12 @@ class MMKVCache extends IBaseStorage {
     if (value == null || value.isEmpty) {
       return null;
     } else {
-      return fromJson(value);
+      var json = jsonDecode(value);
+      List<T> list = [];
+      for (var item in json) {
+        list.add(fromJson.call(item));
+      }
+      return list;
       /*try {
         return fromJson(value);
       } catch (e, stackTrace) {

@@ -19,13 +19,23 @@ abstract class IBaseStorage {
     bool nullRemove = true,
   });
 
+  Future<bool> saveObjectList<T>(
+      String key,
+      List<T>? value,
+      {
+        String Function(T)? toJson,
+        String Function(List<T>)? listToJson,
+        bool nullRemove = true,
+      });
+
+
   Future<String?> getString(String key);
   Future<int?> getInt(String key);
   Future<double?> getDouble(String key);
   Future<bool?> getBool(String key);
 
   // 字符串转对象方法 - 使用泛型
-  Future<T?> getStringToObject<T>(String key, T Function(String) fromJson);
+  Future<List<T>?> getStringToObject<T>(String key, T Function(Map<String, dynamic>) fromJson);
 
   Future<void> remove(String key);
   Future<void> clear();

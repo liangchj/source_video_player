@@ -11,6 +11,7 @@ class BottomSheetDialogUtils {
     RouteSettings? settings,
     Clip? clipBehavior,
     Color? barrierColor,
+    ShapeBorder? shape,
   }) {
     Widget bottomSheet = closeBtnShow
         ? Stack(
@@ -54,6 +55,7 @@ class BottomSheetDialogUtils {
       routeSettings: settings,
       clipBehavior: clipBehavior,
       barrierColor: barrierColor,
+      shape: shape,
       builder: (context) => bottomSheet,
     );
   }

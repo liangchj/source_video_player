@@ -5,6 +5,7 @@ import 'package:source_video_player/pages/media_library/local_media_directory_li
 
 import '../models/app_directory_model.dart';
 import '../pages/home_page.dart';
+import '../pages/media_library/media_library_play_list_page.dart';
 import '../pages/media_library/media_list_page.dart';
 import 'app_pages.dart';
 
@@ -30,6 +31,11 @@ class AppRouter {
             return MediaListPage(folder:  folder,);
           },
         ),
+        GoRoute(
+          path: AppPages.mediaLibraryPlayListPage,
+          builder: (context, state) => MediaLibraryPlayListPage(),
+        ),
+
       ],
       errorBuilder: (context, state) =>
           const Scaffold(body: Center(child: Text('404'))),

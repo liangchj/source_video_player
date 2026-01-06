@@ -32,7 +32,7 @@ class MediaLibraryHomeState extends SignalsBaseState {
         ),
       InkWell(
         onTap: () {
-          // Get.toNamed(AppRoutes.playDirectoryList);
+          locator<AppRouter>().router.push(AppPages.mediaLibraryPlayListPage);
         },
         child: const ListTile(
           leading: Icon(Icons.playlist_play_rounded),

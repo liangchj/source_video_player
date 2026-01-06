@@ -1,5 +1,13 @@
+import 'dart:convert';
 import 'dart:io';
 
+List<AppDirectoryModel> appDirectoryModelListFromJson(String str) =>
+    List<AppDirectoryModel>.from(
+      json.decode(str).map((x) => AppDirectoryModel.fromJson(x)),
+    );
+
+String appDirectoryModelListToJson(List<AppDirectoryModel> data) =>
+    json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
 /// 目录
 /// 加上前缀app，避免和系统目录冲突
