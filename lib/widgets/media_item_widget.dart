@@ -185,7 +185,7 @@ class MediaItemWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10),
       onPressed: () {
         BottomSheetDialogUtils.openModalBottomSheet(
-          _buildOperateListWidget(context),
+          (context) => _buildOperateListWidget(context),
           context: context,
           closeBtnShow: false,
         );

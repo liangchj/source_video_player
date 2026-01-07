@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../storage/istorage.dart';
 import '../storage/mmkv_storage.dart';
+import '../storage/storage_service.dart';
 import 'app_router.dart';
 
 // 全局 GetIt 实例
@@ -14,8 +15,8 @@ void setupLocator() {
   locator.registerLazySingleton<AppRouter>(() => AppRouter());
 
   locator.registerSingletonAsync<IStorage>(() async {
-    await MMKVStorage.init(); // 先初始化
-    return MMKVStorage.storage;
+    await StorageService.init(); // 先初始化
+    return StorageService.storage;
   });
 }
 

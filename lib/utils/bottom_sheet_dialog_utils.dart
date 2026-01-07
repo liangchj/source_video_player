@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class BottomSheetDialogUtils {
   static void openModalBottomSheet(
-    Widget widget, {
+    Widget Function(BuildContext) builder, {
     required BuildContext context,
     bool closeBtnShow = true,
     Color backgroundColor = Colors.white,
@@ -13,40 +13,6 @@ class BottomSheetDialogUtils {
     Color? barrierColor,
     ShapeBorder? shape,
   }) {
-    Widget bottomSheet = closeBtnShow
-        ? Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 50.0),
-                child: widget,
-              ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  color: backgroundColor,
-                  child: Column(
-                    children: [
-                      Container(
-                        height: 6,
-                        color: Colors.grey.withValues(alpha: 0.1),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          //关闭对话框
-                          closeModalBottomSheet();
-                        },
-                        child: Text("取消"),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          )
-        : widget;
-
     showModalBottomSheet(
       context: context,
       backgroundColor: backgroundColor,
@@ -56,7 +22,39 @@ class BottomSheetDialogUtils {
       clipBehavior: clipBehavior,
       barrierColor: barrierColor,
       shape: shape,
-      builder: (context) => bottomSheet,
+      builder: (context) => closeBtnShow
+          ? Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 50.0),
+                  child: builder.call(context),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    color: backgroundColor,
+                    child: Column(
+                      children: [
+                        Container(
+                          height: 6,
+                          color: Colors.grey.withValues(alpha: 0.1),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            //关闭对话框
+                            closeModalBottomSheet();
+                          },
+                          child: Text("取消"),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : builder.call(context),
     );
   }
 

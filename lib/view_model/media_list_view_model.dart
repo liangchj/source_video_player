@@ -16,6 +16,7 @@ import 'base_view_model.dart';
 
 class MediaListViewModel extends BaseViewModel {
   final AppDirectoryModel? folder;
+  late AppDirectorySourceType? appDirectorySourceType;
   int pageSize = 20;
 
   bool isRefresh = false;
@@ -25,6 +26,7 @@ class MediaListViewModel extends BaseViewModel {
   late PagingController<int, AppMediaFileModel> pagingController;
 
   MediaListViewModel(this.folder) {
+    appDirectorySourceType = folder?.appDirectorySourceType;
     init();
   }
   @override
@@ -59,7 +61,6 @@ class MediaListViewModel extends BaseViewModel {
   @override
   void dispose() {
     loadingState.dispose();
-
     /// 取消事件通知订阅。
     PhotoManager.stopChangeNotify();
     // 移除监听，避免内存泄漏

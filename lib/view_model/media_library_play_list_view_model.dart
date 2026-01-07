@@ -1,5 +1,6 @@
 import 'package:signals/signals.dart';
 import 'package:source_video_player/route/locator.dart';
+import 'package:source_video_player/utils/logger_utils.dart';
 
 import '../cache/media_library_play_list_cache.dart';
 import '../models/app_directory_model.dart';
@@ -10,9 +11,6 @@ import 'base_view_model.dart';
 class MediaLibraryPlayListViewModel extends BaseViewModel {
   final Signal<LoadingStateModel> loadingState = Signal(LoadingStateModel());
   final Signal<List<AppDirectoryModel>> playDirectoryList = Signal([]);
-
-  final Signal<String> createNewPlayDirectoryName = Signal("");
-  final Signal<String> createNewPlayDirectoryErrorText = Signal("");
 
   MediaLibraryPlayListViewModel() {
     init();
@@ -26,8 +24,6 @@ class MediaLibraryPlayListViewModel extends BaseViewModel {
   void dispose() {
     loadingState.dispose();
     playDirectoryList.dispose();
-    createNewPlayDirectoryName.dispose();
-    createNewPlayDirectoryErrorText.dispose();
   }
 
   /// 获取播放目录列表
@@ -77,8 +73,7 @@ class MediaLibraryPlayListViewModel extends BaseViewModel {
     for (var item in playDirectoryList.value) {
       if (item.name == playDirectoryModel.name) {
         msg = "播放目录已存在";
-        createNewPlayDirectoryErrorText.value = msg;
-        break;
+        return msg;
       }
     }
     if (msg == null || msg.isEmpty) {
@@ -131,5 +126,39 @@ class MediaLibraryPlayListViewModel extends BaseViewModel {
     playDirectoryList.sort((a, b) {
       return a.name.toLowerCase().compareTo(b.name.toLowerCase());
     });
+  }
+
+  /// 重命名
+  String? renamePlayDirectoryFile(
+    AppDirectoryModel playDirectoryModel,
+    String newName,
+    int index,
+  ) {
+    String? errorText;
+    try {
+      if (playDirectoryList.value.length < index) {
+        errorText = "目录位置不对或已不存在";
+        return errorText;
+      }
+      int i = playDirectoryList.indexOf(playDirectoryModel);
+      if (i != index) {
+        errorText = "目录位置不对";
+        return errorText;
+      }
+      for (var j = 0; j < playDirectoryList.value.length; j++) {
+        if (playDirectoryList.value[j].name == newName && j != i) {
+          errorText = "目录已存在";
+          return errorText;
+        }
+      }
+
+      playDirectoryModel.name = newName;
+      playDirectoryList[i] = playDirectoryModel;
+      savePlayDirectoryToStorage();
+    } catch (e) {
+      errorText = "重命名播放列表中的目录名称失败：$e";
+      LoggerUtils.logger.e("重命名播放列表中的目录名称失败：$e");
+    }
+    return errorText;
   }
 }

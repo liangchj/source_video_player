@@ -27,7 +27,7 @@ abstract class IBaseStorage {
         String Function(List<T>)? listToJson,
         bool nullRemove = true,
       });
-
+  Future<bool> saveList(String key, List<dynamic> value);
 
   Future<String?> getString(String key);
   Future<int?> getInt(String key);
@@ -37,9 +37,10 @@ abstract class IBaseStorage {
   // 字符串转对象方法 - 使用泛型
   Future<List<T>?> getStringToObject<T>(String key, T Function(Map<String, dynamic>) fromJson);
 
+  Future<List<dynamic>?> getList(String key);
+  Future<T?> getObject<T>(String key);
+
   Future<void> remove(String key);
   Future<void> clear();
 
-  Future<bool> saveList(String key, List<dynamic> value);
-  Future<List<dynamic>?> getList(String key);
 }

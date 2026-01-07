@@ -20,10 +20,18 @@ class _MediaLibraryPlayListPageState extends State<MediaLibraryPlayListPage> {
   late MediaLibraryPlayListViewModel viewModel;
   TextEditingController? renameController;
   TextEditingController? newPlayListController;
+
+  late final Signal<String> createNewPlayDirectoryName;
+  late final Signal<String?> createNewPlayDirectoryErrorText;
+  late final Signal<String?> renameErrorText;
+
   @override
   void initState() {
     super.initState();
     viewModel = MediaLibraryPlayListViewModel();
+    createNewPlayDirectoryName = signal("");
+    createNewPlayDirectoryErrorText = signal(null);
+    renameErrorText = Signal(null);
   }
 
   @override
@@ -31,6 +39,9 @@ class _MediaLibraryPlayListPageState extends State<MediaLibraryPlayListPage> {
     renameController?.dispose();
     newPlayListController?.dispose();
     viewModel.dispose();
+    createNewPlayDirectoryName.dispose();
+    createNewPlayDirectoryErrorText.dispose();
+    renameErrorText.dispose();
     super.dispose();
   }
 
@@ -60,15 +71,17 @@ class _MediaLibraryPlayListPageState extends State<MediaLibraryPlayListPage> {
                 onPressed: () {
                   if (context.mounted) {
                     BottomSheetDialogUtils.openModalBottomSheet(
-                        _buildNewPlayDirectory(context),
-                        context: context,
-                        closeBtnShow: false,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.white,
-                        shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadiusDirectional.only(
-                                topStart: Radius.circular(10),
-                                topEnd: Radius.circular(10)))
+                      (context) => _buildNewPlayDirectory(context),
+                      context: context,
+                      closeBtnShow: false,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.white,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadiusDirectional.only(
+                          topStart: Radius.circular(10),
+                          topEnd: Radius.circular(10),
+                        ),
+                      ),
                     );
                   }
                 },
@@ -100,6 +113,7 @@ class _MediaLibraryPlayListPageState extends State<MediaLibraryPlayListPage> {
   Widget _buildOperateListWidget(
     BuildContext context, {
     required AppDirectoryModel playDirectoryModel,
+    required int index,
   }) {
     // name 重命名 字幕 弹幕 添加到播放列表 删除
     final ButtonStyle buttonStyle = ButtonStyle(
@@ -124,7 +138,7 @@ class _MediaLibraryPlayListPageState extends State<MediaLibraryPlayListPage> {
               icon: const Icon(Icons.edit_rounded),
               label: const Text("重命名"),
               onPressed: () =>
-                  _renamePlayDirectoryFile(context, playDirectoryModel),
+                  _renamePlayDirectoryFile(context, playDirectoryModel, index),
             ),
             TextButton.icon(
               style: buttonStyle,
@@ -194,9 +208,10 @@ class _MediaLibraryPlayListPageState extends State<MediaLibraryPlayListPage> {
               ),
               onPressed: () {
                 BottomSheetDialogUtils.openModalBottomSheet(
-                  _buildOperateListWidget(
+                  (context) => _buildOperateListWidget(
                     context,
                     playDirectoryModel: fileDirectoryModel,
+                    index: index,
                   ),
                   context: context,
                   closeBtnShow: false,
@@ -229,113 +244,108 @@ class _MediaLibraryPlayListPageState extends State<MediaLibraryPlayListPage> {
         ),
       ),
     );
-    viewModel.createNewPlayDirectoryName.value = ""; // 清除新增播放目录名称
-    viewModel.createNewPlayDirectoryErrorText.value = ""; // 清除新增播放目录验证信息
-    return SingleChildScrollView(
-      physics: const NeverScrollableScrollPhysics(),
-      child: Container(
-        padding: EdgeInsets.only(
-          top: 10,
-          left: 16,
-          right: 16,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 10,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,  // 重要：添加这行
-          children: [
-            Row(
-              children: const [
-                Icon(Icons.playlist_play_rounded),
-                Text("创建新的播放列表"),
-              ],
-            ),
-            Row(
-              children: [
-                Watch(
-                  (context) => Expanded(
-                    child: TextField(
-                      controller: newPlayListController,
-                      autofocus: true,
-                      maxLines: 1,
-                      // scrollPadding: EdgeInsets.zero,
-                      onChanged: (value) {
-                        viewModel.createNewPlayDirectoryName.value =
-                            value; // 新增播放目录名称
-                        if (value.isEmpty) {
-                          // 新增播放目录名称为空时清除验证信息
-                          viewModel.createNewPlayDirectoryErrorText.value = "";
-                        }
-                      },
-                      decoration: InputDecoration(
-                        isCollapsed: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 12,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(6),
-                          borderSide: const BorderSide(color: Colors.grey),
-                        ),
-                        //获得焦点下划线设为蓝色
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(6),
-                          borderSide: BorderSide(
-                            color: Theme.of(context).primaryColor,
-                          ),
-                        ),
-                        border: const OutlineInputBorder(),
-                        // 新增播放目录名称验证信息
-                        errorText:
-                            viewModel
-                                .createNewPlayDirectoryErrorText
-                                .value
-                                .isEmpty
-                            ? null
-                            : viewModel.createNewPlayDirectoryErrorText.value,
+    newPlayListController?.text = "";
+    createNewPlayDirectoryName.value = ""; // 清除新增播放目录名称
+
+    return Container(
+      color: Colors.white,
+      padding: EdgeInsets.only(
+        top: 10,
+        left: 16,
+        right: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 10,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: const [
+              Icon(Icons.playlist_play_rounded),
+              Text("创建新的播放列表"),
+            ],
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: Watch(
+                  (context) => TextField(
+                    controller: newPlayListController,
+                    autofocus: true,
+                    maxLines: 1,
+                    scrollPadding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                    ),
+                    onChanged: (value) {
+                      createNewPlayDirectoryName.value = value; // 新增播放目录名称
+                      if (value.isEmpty) {
+                        // 新增播放目录名称为空时清除验证信息
+                        createNewPlayDirectoryErrorText.value = null;
+                      }
+                    },
+                    decoration: InputDecoration(
+                      isCollapsed: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 12,
                       ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: const BorderSide(color: Colors.grey),
+                      ),
+                      //获得焦点下划线设为蓝色
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                      border: const OutlineInputBorder(),
+                      // 新增播放目录名称验证信息
+                      errorText: createNewPlayDirectoryErrorText.value,
                     ),
                   ),
                 ),
-      
-                const Padding(padding: EdgeInsets.symmetric(horizontal: 5)),
-                Watch(
-                  (context) => Padding(
-                    // 新增播放目录名称验证不通过时显示错误信息导致输入框上移，因此按钮也同步上移
-                    padding:
-                        viewModel.createNewPlayDirectoryErrorText.value.isEmpty
-                        ? EdgeInsets.zero
-                        : const EdgeInsets.only(bottom: 22.0),
-                    child: ElevatedButton(
-                      // 新增播放目录名称为空时不可点击创建按钮
-                      onPressed:
-                          viewModel.createNewPlayDirectoryName.value.isEmpty
-                          ? null
-                          : () {
-                              String text = newPlayListController!.text.trim();
-                              if (text.isNotEmpty) {
-                                var msg = viewModel.addPlayDirectory(
-                                  AppDirectoryModel(
-                                    path: text,
-                                    name: text,
-                                    fileNumber: 0,
-                                  ),
-                                );
-                                if (msg == null || msg.isEmpty) {
-                                  Navigator.of(context).pop();
-                                }
+              ),
+
+              const Padding(padding: EdgeInsets.symmetric(horizontal: 5)),
+              Watch(
+                (context) => Padding(
+                  // 新增播放目录名称验证不通过时显示错误信息导致输入框上移，因此按钮也同步上移
+                  padding: createNewPlayDirectoryErrorText.value == null || createNewPlayDirectoryErrorText.value!.isEmpty
+                      ? EdgeInsets.zero
+                      : const EdgeInsets.only(bottom: 22.0),
+                  child: ElevatedButton(
+                    // 新增播放目录名称为空时不可点击创建按钮
+                    onPressed: createNewPlayDirectoryName.value.isEmpty
+                        ? null
+                        : () {
+                            String text = newPlayListController!.text.trim();
+                            if (text.isNotEmpty) {
+                              createNewPlayDirectoryErrorText.value = viewModel.addPlayDirectory(
+                                AppDirectoryModel(
+                                  path: text,
+                                  name: text,
+                                  fileNumber: 0,
+                                ),
+                              );
+                              if (createNewPlayDirectoryErrorText.value == null ||
+                                  createNewPlayDirectoryErrorText.value!.isEmpty) {
+                                newPlayListController?.text = "";
+                                createNewPlayDirectoryName.value = "";
+                                Navigator.of(context).pop();
                               }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(0, 36),
-                      ),
-                      child: const Text("创建"),
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(0, 36),
                     ),
+                    child: const Text("创建"),
                   ),
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -344,6 +354,7 @@ class _MediaLibraryPlayListPageState extends State<MediaLibraryPlayListPage> {
   _renamePlayDirectoryFile(
     BuildContext context,
     AppDirectoryModel playDirectoryModel,
+    int index,
   ) async {
     //关闭对话框
     //关闭BottomSheet
@@ -353,33 +364,72 @@ class _MediaLibraryPlayListPageState extends State<MediaLibraryPlayListPage> {
     String oldName = playDirectoryModel.name;
     //定义一个controller
     renameController ??= TextEditingController.fromValue(
-      TextEditingValue(text: oldName),
+      TextEditingValue(
+        text: oldName,
+        selection: TextSelection.fromPosition(
+          const TextPosition(affinity: TextAffinity.downstream, offset: 0),
+        ),
+      ),
     );
     if (!context.mounted) {
       return;
     }
+    renameController!.text = oldName;
+    renameErrorText.value = null;
+
     showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: Text("重命名为"),
-          content: TextField(
-            controller: renameController!, //设置cont
-            inputFormatters: const [], // roller
+          content: Watch(
+            (context) => TextField(
+              controller: renameController, //设置cont
+              autofocus: true,
+              inputFormatters: const [], // roller
+              decoration: InputDecoration(
+                isCollapsed: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: 12,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: const BorderSide(color: Colors.grey),
+                ),
+                //获得焦点下划线设为蓝色
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: BorderSide(color: Theme.of(context).primaryColor),
+                ),
+                border: const OutlineInputBorder(),
+                errorText: renameErrorText.value,
+              ),
+            ),
           ),
           actions: [
             TextButton(
               child: const Text("取消"),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                renameController!.text = "";
+                renameErrorText.value = null;
+                Navigator.of(context).pop();
+              },
             ),
             TextButton(
               child: const Text("确定"),
               onPressed: () {
                 var newName = renameController!.text;
                 if (newName != oldName) {
-                  playDirectoryModel.name = newName;
-                  viewModel.reorder();
-                  Navigator.of(context).pop();
+                  renameErrorText.value = viewModel.renamePlayDirectoryFile(
+                    playDirectoryModel,
+                    newName,
+                    index,
+                  );
+                  if (renameErrorText.value == null || renameErrorText.value!.isEmpty) {
+                    renameController!.text = "";
+                    Navigator.of(context).pop();
+                  }
                 }
               }, //关闭对话框
             ),
