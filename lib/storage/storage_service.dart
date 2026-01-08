@@ -18,7 +18,8 @@ class StorageService extends IStorage {
 
   static late Store _objectBoxStore;
 
-  static Future<void> init() async {
+  @override
+  Future<void> init() async {
     await MMKV.initialize();
     storage.settings = MMKVCache(MMKV(MMKVMapID.settings.mmapID));
     storage.playList = MMKVCache(MMKV(MMKVMapID.playList.mmapID));
@@ -32,21 +33,17 @@ class StorageService extends IStorage {
       ),
     );
     storage.playHistory = ObjectBoxHistoryStorage(store: _objectBoxStore);
+
   }
 
 
   static void close() {
-    storage.settings.storage.close();
-    storage.playList.storage.close();
-    storage.playHistory.storage.close();
-    storage.danmaku.storage.close();
-    storage.subtitle.storage.close();
+    storage.settings.close();
+    storage.playList.close();
+    storage.playHistory.close();
+    storage.danmaku.close();
+    storage.subtitle.close();
 
     _objectBoxStore.close();
-  }
-
-  @override
-  void dispose() {
-    close();
   }
  }

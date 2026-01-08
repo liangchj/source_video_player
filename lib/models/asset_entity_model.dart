@@ -25,4 +25,7 @@ class AssetEntityModel extends PlatformAssetEntity<AssetEntity> {
   @override
   String get id => super.entity.id;
 
+  @override
+  DateTime get modifiedDateTime => super.entity.modifiedDateTime;
+
 }

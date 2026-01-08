@@ -9,15 +9,29 @@ import '../storage/storage_keys.dart';
 import 'base_view_model.dart';
 
 class MediaLibraryPlayListViewModel extends BaseViewModel {
-  final Signal<LoadingStateModel> loadingState = Signal(LoadingStateModel());
-  final Signal<List<AppDirectoryModel>> playDirectoryList = Signal([]);
+  // 单例实例
+  static final MediaLibraryPlayListViewModel _instance =
+  MediaLibraryPlayListViewModel._internal();
 
-  MediaLibraryPlayListViewModel() {
+  factory MediaLibraryPlayListViewModel() => _instance;
+
+  MediaLibraryPlayListViewModel._internal() {
     init();
   }
+
+  late final Signal<LoadingStateModel> loadingState;
+  final Signal<List<AppDirectoryModel>> playDirectoryList = Signal([]);
+
+
   @override
   void init() {
-    getPlayDirectoryList();
+    // 这里应该只初始化类的成员变量，但不能获取列表数据
+
+    // getPlayDirectoryList();
+  }
+
+  void initData() {
+    loadingState = Signal(LoadingStateModel());
   }
 
   @override

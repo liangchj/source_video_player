@@ -7,6 +7,7 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import '../commons/widget_style_commons.dart';
 import '../models/app_media_file_model.dart';
 import '../utils/bottom_sheet_dialog_utils.dart';
+import '../utils/datetime_utils.dart';
 import '../utils/logger_utils.dart';
 import 'time_format_utils.dart';
 
@@ -163,12 +164,12 @@ class MediaItemWidget extends StatelessWidget {
     }
     subtitleList.add(Spacer());
 
-    /*var modTime =
+    var modTime =
         fileModel.assetEntity?.modifiedDateTime ??
         fileModel.file?.lastModifiedSync();
     if (modTime != null) {
       subtitleList.add(Text(DateTimeUtils.ymdhmsFormatter.format(modTime)));
-    }*/
+    }
     return Padding(
       padding: const EdgeInsets.only(top: 6),
       child: Row(
@@ -260,7 +261,7 @@ class MediaItemWidget extends StatelessWidget {
       style: buttonStyle,
       icon: const Icon(Icons.playlist_play_rounded),
       label: const Text("添加到播放列表"),
-      onPressed: () => _addToPlayList(),
+      onPressed: () => _addToPlayList(context),
     );
     Widget playWidget = TextButton.icon(
       style: buttonStyle,
@@ -423,41 +424,42 @@ class MediaItemWidget extends StatelessWidget {
   }
 
   /// 添加到播放列表
-  _addToPlayList() {
-    //关闭对话框
-    /*bool open = Get.isBottomSheetOpen ?? false;
-    if (open) {
-      Get.closeAllBottomSheets();
+  _addToPlayList(BuildContext context) {
+    if (!context.mounted) {
+      return;
     }
-    Get.bottomSheet(
-      Container(
-        height: Get.height * 0.6,
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-        decoration: const BoxDecoration(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Text("将视频添加至播放列表", textAlign: TextAlign.left),
-            ),
-            OutlinedButton(
-              onPressed: () {},
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [Icon(Icons.add), Text("创建新播放列表")],
+    BottomSheetDialogUtils.openModalBottomSheet(
+          (context) => Container(
+            height: MediaQuery.of(context).size.height * 0.6,
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
               ),
             ),
-            Expanded(child: _buildPlayDirectoryList()),
-          ],
-        ),
-      ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 4),
+                  child: Text("将视频添加至播放列表", textAlign: TextAlign.left),
+                ),
+                OutlinedButton(
+                  onPressed: () {},
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [Icon(Icons.add), Text("创建新播放列表")],
+                  ),
+                ),
+                Expanded(child: _buildPlayDirectoryList()),
+              ],
+            ),
+          ),
+      context: context,
+      closeBtnShow: false,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadiusDirectional.only(
@@ -465,15 +467,15 @@ class MediaItemWidget extends StatelessWidget {
           topEnd: Radius.circular(10),
         ),
       ),
-    );*/
+    );
   }
 
   /// 构建播放目录列表
   Widget _buildPlayDirectoryList() {
+    // 这里需要获取到播放目录列表，因此需要MediaLibraryPlayListViewModel
+
     return Container();
-    /*var playDirectoryController = Get.find<PlayDirectoryListController>();
-    var videoFileController = Get.find<VideoFileController>();
-    var videoDirectoryList = playDirectoryController.videoDirectoryList;
+    /*var videoDirectoryList = playDirectoryController.videoDirectoryList;
     return Scrollbar(
         child: ListView.builder(
             itemExtent: 66,

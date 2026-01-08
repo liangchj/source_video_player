@@ -5,41 +5,17 @@ import 'package:source_video_player/utils/logger_utils.dart';
 
 import 'istorage.dart';
 
-/*class MMKVStorage extends IStorage {
-  static final MMKVStorage _storage = MMKVStorage._internal();
-  factory MMKVStorage() => _storage;
-  MMKVStorage._internal();
-  static MMKVStorage get storage => _storage;
-
-  static Future<void> init() async {
-    await MMKV.initialize();
-    storage.settings = MMKVCache(MMKV(MMKVMapID.settings.mmapID));
-    storage.playList = MMKVCache(MMKV(MMKVMapID.playList.mmapID));
-    storage.playHistory = MMKVCache(MMKV(MMKVMapID.playHistory.mmapID));
-    storage.danmaku = MMKVCache(MMKV(MMKVMapID.danmaku.mmapID));
-    storage.subtitle = MMKVCache(MMKV(MMKVMapID.subtitle.mmapID));
-  }
-
-  static void close() {
-    storage.settings.storage.close();
-    storage.playList.storage.close();
-    storage.playHistory.storage.close();
-    storage.danmaku.storage.close();
-    storage.subtitle.storage.close();
-  }
-
-  @override
-  void dispose() {
-    close();
-  }
-}*/
-
 class MMKVCache extends IBaseStorage {
   final MMKV _mmkv;
   MMKVCache(this._mmkv);
 
   @override
   MMKV get storage => _mmkv;
+
+  @override
+  void close() {
+    _mmkv.close();
+  }
 
   @override
   Future<bool> save(String key, dynamic value, {bool nullRemove = true}) async {
@@ -111,13 +87,12 @@ class MMKVCache extends IBaseStorage {
 
   @override
   Future<bool> saveObjectList<T>(
-      String key,
-      List<T>? value,
-      {
-        String Function(T)? toJson,
-        String Function(List<T>)? listToJson,
-        bool nullRemove = true,
-      }) async {
+    String key,
+    List<T>? value, {
+    String Function(T)? toJson,
+    String Function(List<T>)? listToJson,
+    bool nullRemove = true,
+  }) async {
     assert(toJson != null || listToJson != null);
     if (key.isEmpty) return false;
     try {
@@ -133,9 +108,10 @@ class MMKVCache extends IBaseStorage {
       String jsonStr = "";
       if (listToJson != null) {
         jsonStr = listToJson.call(value);
-      }
-      else if (toJson != null) {
-        jsonStr = json.encode(List<dynamic>.from(value.map((x) => toJson.call(x))));
+      } else if (toJson != null) {
+        jsonStr = json.encode(
+          List<dynamic>.from(value.map((x) => toJson.call(x))),
+        );
       }
       return storage.encodeString(key, jsonStr);
     } catch (e, stackTrace) {

@@ -5,7 +5,7 @@ import '../../utils/logger_utils.dart';
 import '../objectbox.g.dart';
 import 'models/history_model.dart';
 
-class ObjectBoxHistoryStorage extends IBaseStorage {
+class ObjectBoxHistoryStorage extends IHistoryStorage<HistoryModel> {
   final Store store;
   ObjectBoxHistoryStorage({required this.store}) {
     _histories = store.box<HistoryModel>();
@@ -16,28 +16,64 @@ class ObjectBoxHistoryStorage extends IBaseStorage {
   Box<HistoryModel> get storage => _histories;
 
   @override
+  void close() {
+  }
+
+  @override
+  Future<List<HistoryModel>> getHistoryList({
+    int page = 0,
+    int pageSize = 20,
+    String? filter,
+  }) async {
+    // 后续实现
+    return [];
+  }
+  @override
+  Future<int> getHistoryCount() async {
+    // 后续实现
+    return 0;
+  }
+
+  @override
   Future<bool> save(String key, dynamic value, {bool nullRemove = true}) async {
     if (key.isEmpty) {
       return false;
     }
+    Query<HistoryModel>? query;
     try {
+      query = storage
+        .query(HistoryModel_.databaseId.equals(key))
+        .build();
+      var findFirst = query.findFirst();
       if (value == null) {
         if (nullRemove) {
-          var query = storage
-              .query(HistoryModel_.databaseId.equals(key))
-              .build();
-          var findFirst = query.findFirst();
           if (findFirst != null) {
             storage.remove(findFirst.id);
           }
-          query.close();
           return true; // 删除成功也算执行成功
         } else {
           return false;
         }
       }
       if (value is HistoryModel) {
-        var id = storage.put(value);
+        late int id;
+        if (findFirst == null) {
+          id = storage.put(value);
+        } else {
+          id = findFirst.id;
+          HistoryModel newObj = findFirst.copyWith(
+            resourceId: value.resourceId,
+            apiKey: value.apiKey,
+            sourceGroupKey: value.sourceGroupKey,
+            chapterUrl: value.chapterUrl,
+            chapterName: value.chapterName,
+            chapterIndex: value.chapterIndex,
+            durationInMilli: value.durationInMilli,
+            positionInMilli: value.positionInMilli,
+            time: value.time,
+          );
+          storage.put(newObj);
+        }
         return id != 0;
       }
       throw "传入的数据类型不是HistoryModel";
@@ -47,6 +83,8 @@ class ObjectBoxHistoryStorage extends IBaseStorage {
         "ObjectBoxHistoryStorage save failed! key: $key, value: $value, error: $e, stack: $stackTrace",
       );
       return false;
+    } finally {
+      query?.close(); // 确保资源被释放
     }
   }
 

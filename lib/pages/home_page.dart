@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:source_video_player/view_model/home_view_model.dart';
 
-import '../route/locator.dart';
 import '../state/home_state.dart';
 
 class HomePage extends StatefulWidget {
@@ -32,7 +31,6 @@ class _HomePageState extends State<HomePage>
 
   @override
   void dispose() {
-    storage.dispose();
     viewModel.dispose();
     super.dispose();
   }

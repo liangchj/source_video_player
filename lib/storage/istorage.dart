@@ -1,15 +1,15 @@
 abstract class IStorage {
-  void dispose();
-
+  Future<void> init();
   late IBaseStorage settings;
   late IBaseStorage playList;
   late IBaseStorage danmaku;
   late IBaseStorage subtitle;
-  late IBaseStorage playHistory;
+  late IHistoryStorage playHistory;
 }
 
 abstract class IBaseStorage {
   dynamic get storage;
+  void close();
   Future<bool> save(String key, dynamic value, {bool nullRemove = true});
   // 对象保存 - 使用泛型
   Future<bool> saveObject<T>(
@@ -43,4 +43,14 @@ abstract class IBaseStorage {
   Future<void> remove(String key);
   Future<void> clear();
 
+}
+
+
+abstract class IHistoryStorage<T> extends IBaseStorage {
+  Future<List<T>> getHistoryList({
+    int page = 0,
+    int pageSize = 20,
+    String? filter,
+  });
+  Future<int> getHistoryCount();
 }

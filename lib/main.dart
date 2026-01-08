@@ -6,8 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:source_video_player/storage/istorage.dart';
+import 'package:source_video_player/utils/logger_utils.dart';
 
-import 'permission/permission_controller.dart';
 import 'permission/permission_service.dart';
 import 'route/app_router.dart';
 import 'route/locator.dart';
@@ -17,40 +18,51 @@ Future<void> main() async {
   MediaKit.ensureInitialized;
   // CommonCache();
 
-  await Future.wait(
-    [
-      SystemChrome.setEnabledSystemUIMode(
-        SystemUiMode.manual,
-        overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
-      ),
-      SystemChrome.setPreferredOrientations(
-        [
-          DeviceOrientation.portraitUp,
-          DeviceOrientation.portraitDown,
-        ],
-      ),
-    ],
-  );
+  await Future.wait([
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
+    ),
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]),
+  ]);
+  // 添加应用生命周期监听
+  WidgetsBinding.instance.addObserver(_AppLifecycleObserver());
 
   // 1. 初始化 GetIt
   setupLocator();
   // 2. 初始化 GoRouter
   locator<AppRouter>().initRouter();
+  // 3. 直接请求权限（无需等待存储初始化）
   if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
     // 初始化权限服务
     final permissionService = PermissionService();
 
     // 检查是否是首次启动
-    bool isFirstLaunch = true; //await _checkFirstLaunch();
-    if (isFirstLaunch) {
-      // 首次启动时请求媒体权限（非强制）
-      await permissionService.requestMediaPermissionOnFirstLaunch();
-      // 标记为非首次启动
-      // await _markFirstLaunchCompleted();
+    await permissionService.requestMediaPermissionOnFirstLaunch();
+  }
+  // 4. 异步初始化存储服务
+  _initializeStorageAsync();
+  runApp(const MyApp());
+}
+
+Future<void> _initializeStorageAsync() async {
+  try {
+    await locator<IStorage>().init();
+  } catch (e) {
+    LoggerUtils.logger.e("Storage initialization failed: $e");
+  }
+}
+
+class _AppLifecycleObserver extends WidgetsBindingObserver {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached) {
+      locator.reset();
     }
   }
-
-  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {

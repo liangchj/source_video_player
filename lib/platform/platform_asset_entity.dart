@@ -14,4 +14,6 @@ abstract class PlatformAssetEntity<T> {
   Future<String?> get mediaUrl;
 
   String get id;
+
+  DateTime get modifiedDateTime;
 }

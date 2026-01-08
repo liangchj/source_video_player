@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:signals/signals_flutter.dart';
+import 'package:source_video_player/route/locator.dart';
 
 import '../../models/app_directory_model.dart';
 import '../../utils/bottom_sheet_dialog_utils.dart';
@@ -28,7 +29,9 @@ class _MediaLibraryPlayListPageState extends State<MediaLibraryPlayListPage> {
   @override
   void initState() {
     super.initState();
-    viewModel = MediaLibraryPlayListViewModel();
+    // viewModel = MediaLibraryPlayListViewModel();
+    viewModel = locator<MediaLibraryPlayListViewModel>();
+    viewModel.getPlayDirectoryList();
     createNewPlayDirectoryName = signal("");
     createNewPlayDirectoryErrorText = signal(null);
     renameErrorText = Signal(null);

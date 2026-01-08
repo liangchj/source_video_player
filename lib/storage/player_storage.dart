@@ -56,8 +56,8 @@ class PlayerStorage extends PlayerDataStorage {
 
   @override
   Future<bool> savePlayHistory(String key, PlayHistoryModel historyModel) {
-    // print("保存历史记录：${historyModel.toJson()}");
     HistoryModel history = HistoryModel.fromPlayHistoryModel(historyModel);
+    // print("保存历史记录：${historyModel.key}, ${history.databaseId}:${historyModel.toJson()}");
     return storage.playHistory.save(history.databaseId, history);
   }
 
@@ -69,7 +69,7 @@ class PlayerStorage extends PlayerDataStorage {
     HistoryModel? model = await storage.playHistory.getObject(key);
     if (model != null) {
       history = model.toPlayHistoryModel();
-      // print("获取播放历史：${history.toJson()}");
+      // print("获取播放历史：$key->${history.toJson()}");
     }
     return history;
   }
