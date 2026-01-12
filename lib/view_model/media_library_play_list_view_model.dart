@@ -9,15 +9,6 @@ import '../storage/storage_keys.dart';
 import 'base_view_model.dart';
 
 class MediaLibraryPlayListViewModel extends BaseViewModel {
-  // 单例实例
-  static final MediaLibraryPlayListViewModel _instance =
-  MediaLibraryPlayListViewModel._internal();
-
-  factory MediaLibraryPlayListViewModel() => _instance;
-
-  MediaLibraryPlayListViewModel._internal() {
-    init();
-  }
 
   late final Signal<LoadingStateModel> loadingState;
   final Signal<List<AppDirectoryModel>> playDirectoryList = Signal([]);
@@ -25,9 +16,7 @@ class MediaLibraryPlayListViewModel extends BaseViewModel {
 
   @override
   void init() {
-    // 这里应该只初始化类的成员变量，但不能获取列表数据
-
-    // getPlayDirectoryList();
+    getPlayDirectoryList();
   }
 
   void initData() {
@@ -175,4 +164,39 @@ class MediaLibraryPlayListViewModel extends BaseViewModel {
     }
     return errorText;
   }
+
+
+  /// 添加视频到播放目录
+  /*String addVideoToPlayDirectory(AppDirectoryModel playDirectoryModel, FileModel fileModel) {
+    String msg = "";
+    String dirName = playDirectoryModel.name;
+    List<FileModel> videoFileList = [];
+    if (MediaData.playFileListMap.containsKey(CacheConst.cachePrev + dirName)) {
+      videoFileList = MediaData.playFileListMap[CacheConst.cachePrev + dirName] ?? [];
+    } else {
+      // 从存储中获取播放文件列表（path相当于key）
+      String? playFileListJson = PlayListMMKVCache.getInstance().getString(CacheConst.cachePrev + dirName);
+      if (playFileListJson != null && playFileListJson.isNotEmpty) {
+        /// 转换为list
+        videoFileList.assignAll(fileModelListFromJson(playFileListJson));
+      }
+    }
+    if (videoFileList.isNotEmpty) {
+      bool exists = false;
+      for (FileModel element in videoFileList) {
+        if (element.name == fileModel.name) {
+          exists = true;
+          break;
+        }
+      }
+      if (exists) {
+        msg = "视频已经存在于“$dirName”列表中";
+      } else {
+        msg = handleAddAndSaveToPlayDirectory(playDirectoryModel, dirName, videoFileList, fileModel);
+      }
+    } else {
+      msg = handleAddAndSaveToPlayDirectory(playDirectoryModel, dirName, videoFileList, fileModel);
+    }
+    return msg;
+  }*/
 }

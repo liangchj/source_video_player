@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 
 import '../storage/istorage.dart';
 import '../storage/storage_service.dart';
-import '../view_model/media_library_play_list_view_model.dart';
 import 'app_router.dart';
 
 // 全局 GetIt 实例
@@ -20,8 +19,6 @@ void setupLocator() {
   });*/
 
   locator.registerLazySingleton<IStorage>(() => StorageService());
-
-  locator.registerLazySingleton<MediaLibraryPlayListViewModel>(() => MediaLibraryPlayListViewModel());
 }
 
 GoRouter get appGoRouter => locator<AppRouter>().router;

@@ -29,9 +29,7 @@ class _MediaLibraryPlayListPageState extends State<MediaLibraryPlayListPage> {
   @override
   void initState() {
     super.initState();
-    // viewModel = MediaLibraryPlayListViewModel();
-    viewModel = locator<MediaLibraryPlayListViewModel>();
-    viewModel.getPlayDirectoryList();
+    viewModel = MediaLibraryPlayListViewModel();
     createNewPlayDirectoryName = signal("");
     createNewPlayDirectoryErrorText = signal(null);
     renameErrorText = Signal(null);

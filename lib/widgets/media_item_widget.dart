@@ -3,15 +3,19 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:signals/signals_flutter.dart';
 
 import '../commons/widget_style_commons.dart';
+import '../models/app_directory_model.dart';
 import '../models/app_media_file_model.dart';
 import '../utils/bottom_sheet_dialog_utils.dart';
 import '../utils/datetime_utils.dart';
 import '../utils/logger_utils.dart';
+import '../view_model/media_library_play_list_view_model.dart';
+import 'directory_item_widget.dart';
 import 'time_format_utils.dart';
 
-class MediaItemWidget extends StatelessWidget {
+class MediaItemWidget extends StatefulWidget {
   const MediaItemWidget({
     super.key,
     required this.fileModel,
@@ -26,6 +30,27 @@ class MediaItemWidget extends StatelessWidget {
   final Widget? subtitleWidget;
   final Widget? trailingWidget;
   final VoidCallback? onTap;
+
+  @override
+  State<MediaItemWidget> createState() => _MediaItemWidgetState();
+}
+
+class _MediaItemWidgetState extends State<MediaItemWidget> {
+  AppMediaFileModel get fileModel => widget.fileModel;
+  Widget? get leadingWidget => widget.leadingWidget;
+  Widget? get subtitleWidget => widget.subtitleWidget;
+  Widget? get trailingWidget => widget.trailingWidget;
+  VoidCallback? get onTap => widget.onTap;
+  TextEditingController? nameController;
+
+  MediaLibraryPlayListViewModel? playListViewModel;
+
+  @override
+  void dispose() {
+    nameController?.dispose();
+    playListViewModel?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,37 +85,39 @@ class MediaItemWidget extends StatelessWidget {
     var duration = fileModel.assetEntity?.duration;
     return leadingWidget ??
         SizedBox(
-          width: 80,
-          height: 60,
+          width: WidgetStyleCommons.mediaLeadingSize.width,
+          height: WidgetStyleCommons.mediaLeadingSize.height,
           child: Stack(
             children: [
               Positioned.fill(child: _videoThumbnail()),
               Positioned(
-                bottom: 3,
-                right: 0,
+                bottom: WidgetStyleCommons.mediaLeadingRect.bottom,
+                right: WidgetStyleCommons.mediaLeadingRect.right,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 4),
-                  color: Colors.black26.withValues(alpha: 0.5),
+                  padding: WidgetStyleCommons.mediaDurationPadding,
+                  color: WidgetStyleCommons.mediaDurationBgColor,
                   child: duration == null
                       ? null
                       : Text(
                           TimeFormatUtils.durationToMinuteAndSecond(
                             Duration(seconds: duration),
                           ),
-                          style: TextStyle(color: Colors.white),
+                          style: WidgetStyleCommons.mediaDurationTextStyle,
                         ),
                 ),
               ),
               if (fileModel.playHistoryDuration != null && duration != null)
                 Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
+                  left: WidgetStyleCommons.mediaPlayProgressRect.left,
+                  right: WidgetStyleCommons.mediaPlayProgressRect.right,
+                  bottom: WidgetStyleCommons.mediaPlayProgressRect.bottom,
                   child: SizedBox(
-                    height: 3,
+                    height: WidgetStyleCommons.mediaPlayProgressHeight,
                     child: LinearProgressIndicator(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      valueColor: AlwaysStoppedAnimation(Colors.blue),
+                      backgroundColor:
+                          WidgetStyleCommons.mediaPlayProgressBgColor,
+                      valueColor:
+                          WidgetStyleCommons.mediaPlayProgressColorAnimation,
                       value:
                           fileModel.playHistoryDuration!.inSeconds / duration,
                     ),
@@ -123,13 +150,18 @@ class MediaItemWidget extends StatelessWidget {
     }
     return thumbnail == null
         ? const Icon(Icons.video_library)
-        : Image.memory(thumbnail, fit: BoxFit.cover, width: 80, height: 60);
+        : Image.memory(
+            thumbnail,
+            fit: BoxFit.cover,
+            width: WidgetStyleCommons.mediaLeadingSize.width,
+            height: WidgetStyleCommons.mediaLeadingSize.height,
+          );
   }
 
   _buildTitle() {
     return Text(
       fileModel.fileName,
-      maxLines: 2,
+      maxLines: WidgetStyleCommons.mediaTitleMaxLines,
       overflow: TextOverflow.ellipsis,
     );
   }
@@ -183,7 +215,7 @@ class MediaItemWidget extends StatelessWidget {
   IconButton _buildRightOperateIcon(BuildContext context) {
     return IconButton(
       constraints: const BoxConstraints(),
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10),
+      padding: WidgetStyleCommons.mediaTrailingIconPadding,
       onPressed: () {
         BottomSheetDialogUtils.openModalBottomSheet(
           (context) => _buildOperateListWidget(context),
@@ -191,7 +223,7 @@ class MediaItemWidget extends StatelessWidget {
           closeBtnShow: false,
         );
       },
-      icon: const Icon(Icons.more_vert_rounded),
+      icon: WidgetStyleCommons.mediaTrailingIcon,
     );
   }
 
@@ -199,28 +231,18 @@ class MediaItemWidget extends StatelessWidget {
   Widget _buildOperateListWidget(BuildContext context) {
     return SingleChildScrollView(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: const BoxDecoration(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
+        padding: WidgetStyleCommons.mediaOperateBoxPadding,
+        decoration: WidgetStyleCommons.mediaOperateBoxDecoration,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.only(
-                left: 16,
-                top: 6,
-                right: 16,
-                bottom: 0,
-              ),
+              padding: WidgetStyleCommons.mediaOperateTitlePadding,
               child: Text(fileModel.fileName, textAlign: TextAlign.left),
             ),
             ListView(
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+              padding: WidgetStyleCommons.mediaOperateContentListPadding,
               shrinkWrap: true,
               children: _createOperateList(context),
             ),
@@ -233,39 +255,35 @@ class MediaItemWidget extends StatelessWidget {
   /// 生成操作列表
   List<Widget> _createOperateList(BuildContext context) {
     // name 重命名 字幕 弹幕 添加到播放列表 删除
-    final ButtonStyle buttonStyle = ButtonStyle(
-      alignment: Alignment.centerLeft,
-      foregroundColor: WidgetStateProperty.all(Colors.black87),
-    );
     Widget renameWidget = TextButton.icon(
-      style: buttonStyle,
-      icon: const Icon(Icons.edit_rounded),
+      style: WidgetStyleCommons.mediaOperateButtonStyle,
+      icon: WidgetStyleCommons.mediaOperateRenameIcon,
       label: const Text("重命名"),
       onPressed: () => _renameFile(context),
     );
     Widget subtitlesWidget = TextButton.icon(
-      style: buttonStyle,
-      icon: const Icon(Icons.subtitles_rounded),
+      style: WidgetStyleCommons.mediaOperateButtonStyle,
+      icon: WidgetStyleCommons.mediaOperateSubtitleIcon,
       label: const Text("搜索字幕"),
       onPressed: () {},
     );
     Widget danmakuWidget = TextButton.icon(
-      style: buttonStyle,
-      icon: const Icon(Icons.subject_rounded),
+      style: WidgetStyleCommons.mediaOperateButtonStyle,
+      icon: WidgetStyleCommons.mediaOperateDanmakuIcon,
       label: const Text("绑定弹幕"),
       onPressed: () {
         // Get.toNamed(AppRoutes.searchDanmakuSubtitle, arguments: fileModel);
       },
     );
     Widget addToPlayDirectoryWidget = TextButton.icon(
-      style: buttonStyle,
-      icon: const Icon(Icons.playlist_play_rounded),
+      style: WidgetStyleCommons.mediaOperateButtonStyle,
+      icon: WidgetStyleCommons.mediaOperateAddToPlayDirectoryIcon,
       label: const Text("添加到播放列表"),
       onPressed: () => _addToPlayList(context),
     );
     Widget playWidget = TextButton.icon(
-      style: buttonStyle,
-      icon: const Icon(Icons.play_circle_fill_rounded),
+      style: WidgetStyleCommons.mediaOperateButtonStyle,
+      icon: WidgetStyleCommons.mediaOperatePlayIcon,
       label: const Text("播放"),
       onPressed: () {
         //关闭对话框
@@ -334,8 +352,8 @@ class MediaItemWidget extends StatelessWidget {
       danmakuWidget,
       addToPlayDirectoryWidget,
       TextButton.icon(
-        style: buttonStyle,
-        icon: const Icon(Icons.delete_rounded),
+        style: WidgetStyleCommons.mediaOperateButtonStyle,
+        icon: WidgetStyleCommons.mediaOperateDelIcon,
         label: const Text("删除"),
         onPressed: () async {
           //关闭对话框
@@ -366,7 +384,7 @@ class MediaItemWidget extends StatelessWidget {
     await WidgetsBinding.instance.endOfFrame;
     if (context.mounted) {
       //定义一个controller
-      TextEditingController nameController = TextEditingController.fromValue(
+      nameController ??= TextEditingController.fromValue(
         TextEditingValue(text: oldName),
       );
 
@@ -387,8 +405,8 @@ class MediaItemWidget extends StatelessWidget {
               TextButton(
                 child: const Text("确定"),
                 onPressed: () {
-                  var newName = nameController.text;
-                  LoggerUtils.logger.d("确认变更，${nameController.text}");
+                  var newName = nameController?.text;
+                  LoggerUtils.logger.d("确认变更，${nameController?.text}");
                   if (newName != oldName) {
                     File file = fileModel.file!;
                     try {
@@ -429,68 +447,57 @@ class MediaItemWidget extends StatelessWidget {
       return;
     }
     BottomSheetDialogUtils.openModalBottomSheet(
-          (context) => Container(
-            height: MediaQuery.of(context).size.height * 0.6,
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
+      (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        padding: WidgetStyleCommons.mediaOperateAddToPlayDirectoryBoxPadding,
+        decoration:
+            WidgetStyleCommons.mediaOperateAddToPlayDirectoryBoxDecoration,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding:
+                  WidgetStyleCommons.mediaOperateAddToPlayDirectoryBoxPadding,
+              child: Text("将视频添加至播放列表", textAlign: TextAlign.left),
+            ),
+            OutlinedButton(
+              onPressed: () {},
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [Icon(Icons.add), Text("创建新播放列表")],
               ),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 4),
-                  child: Text("将视频添加至播放列表", textAlign: TextAlign.left),
-                ),
-                OutlinedButton(
-                  onPressed: () {},
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [Icon(Icons.add), Text("创建新播放列表")],
-                  ),
-                ),
-                Expanded(child: _buildPlayDirectoryList()),
-              ],
-            ),
-          ),
+            Expanded(child: _buildPlayDirectoryList()),
+          ],
+        ),
+      ),
       context: context,
       closeBtnShow: false,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadiusDirectional.only(
-          topStart: Radius.circular(10),
-          topEnd: Radius.circular(10),
-        ),
-      ),
+      backgroundColor:
+          WidgetStyleCommons.mediaOperateAddToPlayDirectoryBoxBgColor,
+      shape: WidgetStyleCommons.mediaOperateAddToPlayDirectoryBoxShapeBorder,
     );
   }
 
   /// 构建播放目录列表
   Widget _buildPlayDirectoryList() {
     // 这里需要获取到播放目录列表，因此需要MediaLibraryPlayListViewModel
-
+    // playListViewModel ??= MediaLibraryPlayListViewModel();
     return Container();
-    /*var videoDirectoryList = playDirectoryController.videoDirectoryList;
-    return Scrollbar(
+    /*var videoDirectoryList = playListViewModel?.playDirectoryList.value;
+    return Watch((context) => Scrollbar(
         child: ListView.builder(
             itemExtent: 66,
-            itemCount: videoDirectoryList.length,
+            itemCount: playListViewModel?.playDirectoryList.value.length,
             itemBuilder: (context, index) {
-              var fileDirectoryModel = videoDirectoryList[index];
+              AppDirectoryModel<dynamic> fileDirectoryModel = playListViewModel!.playDirectoryList.value[index];
               return DirectoryItemWidget(
                 directoryModel: fileDirectoryModel,
                 onTap: () {
-                  String toastText = playDirectoryController.addVideoToPlayDirectory(fileDirectoryModel, fileModel);
-                  //关闭对话框
-                  bool open = Get.isBottomSheetOpen ?? false;
-                  if (open) {
-                    Get.back();
-                  }
+                  String toastText = playListViewModel!.addVideoToPlayDirectory(fileDirectoryModel, fileModel);
+                  Navigator.of(context).pop();
                   // 视频已经存在于“”列表中
                   // 一个视频已添加到“”列表
                   if (toastText.isNotEmpty) {
@@ -507,7 +514,7 @@ class MediaItemWidget extends StatelessWidget {
                 },
                 contentPadding: const EdgeInsets.only(left: 0, right: 0),
               );
-            }));*/
+            })));*/
   }
 
   /// 创建新的播放列表
