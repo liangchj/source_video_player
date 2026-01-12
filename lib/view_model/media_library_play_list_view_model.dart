@@ -10,17 +10,15 @@ import 'base_view_model.dart';
 
 class MediaLibraryPlayListViewModel extends BaseViewModel {
 
-  late final Signal<LoadingStateModel> loadingState;
+  final Signal<LoadingStateModel> loadingState = Signal(LoadingStateModel());
   final Signal<List<AppDirectoryModel>> playDirectoryList = Signal([]);
-
+  MediaLibraryPlayListViewModel() {
+    init();
+  }
 
   @override
   void init() {
     getPlayDirectoryList();
-  }
-
-  void initData() {
-    loadingState = Signal(LoadingStateModel());
   }
 
   @override
