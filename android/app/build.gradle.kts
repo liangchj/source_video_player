@@ -22,9 +22,9 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.lchj.source_video_player"
+        minSdk = 33
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -35,6 +35,16 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+
+            // 禁用混淆和压缩以加快构建
+            isMinifyEnabled = false
+            isShrinkResources = false
+
+            // 使用多 dex（如需要）
+//            multiDexEnabled = true
+
+            // 减少打包时间
+            isCrunchPngs = false
         }
     }
 }

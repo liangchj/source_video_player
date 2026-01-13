@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:source_video_player/utils/logger_utils.dart';
 
 class BottomSheetDialogUtils {
   static void openModalBottomSheet(
@@ -89,7 +90,7 @@ class BottomSheetDialogUtils {
       // 尝试直接关闭当前的模态组件
       Navigator.of(context, rootNavigator: false).maybePop();
     } catch (e) {
-      print("关闭失败: $e");
+      LoggerUtils.logger.e("closeCurrentBottomSheet，关闭失败: $e");
     }
   }
 }

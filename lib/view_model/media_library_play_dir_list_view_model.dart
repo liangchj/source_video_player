@@ -4,15 +4,16 @@ import 'package:source_video_player/utils/logger_utils.dart';
 
 import '../cache/media_library_play_list_cache.dart';
 import '../models/app_directory_model.dart';
+import '../models/app_media_file_model.dart';
 import '../models/loading_state_model.dart';
+import '../models/play_video_storage_model.dart';
 import '../storage/storage_keys.dart';
 import 'base_view_model.dart';
 
-class MediaLibraryPlayListViewModel extends BaseViewModel {
-
+class MediaLibraryPlayDirListViewModel extends BaseViewModel {
   final Signal<LoadingStateModel> loadingState = Signal(LoadingStateModel());
   final Signal<List<AppDirectoryModel>> playDirectoryList = Signal([]);
-  MediaLibraryPlayListViewModel() {
+  MediaLibraryPlayDirListViewModel() {
     init();
   }
 
@@ -44,7 +45,7 @@ class MediaLibraryPlayListViewModel extends BaseViewModel {
         );
       } else {
         /// 从存储中获取播放目录列表
-        List<AppDirectoryModel>? list = await storage.playList
+        List<AppDirectoryModel>? list = await storage.settings
             .getStringToObject<AppDirectoryModel>(
               StorageKeys.playList,
               AppDirectoryModel.fromJson,
@@ -53,7 +54,7 @@ class MediaLibraryPlayListViewModel extends BaseViewModel {
           list.sort((a, b) {
             return a.name.toLowerCase().compareTo(b.name.toLowerCase());
           });
-          playDirectoryList.value.addAll(list);
+          playDirectoryList.addAll(list);
           MediaLibraryPlayListCache.playDirectoryList = list;
         }
       }
@@ -106,6 +107,8 @@ class MediaLibraryPlayListViewModel extends BaseViewModel {
       }
     }
     if (isChange) {
+      // 移出播放目录下的视频
+      storage.playList.remove(playDirectoryModel.name);
       savePlayDirectoryToStorage();
     }
   }
@@ -113,7 +116,7 @@ class MediaLibraryPlayListViewModel extends BaseViewModel {
   /// 转换为字符串存入内存
   void savePlayDirectoryToStorage() {
     /// 转换为字符串存入内存
-    storage.playList.saveObjectList<AppDirectoryModel>(
+    storage.settings.saveObjectList<AppDirectoryModel>(
       StorageKeys.playList,
       playDirectoryList.value,
       listToJson: appDirectoryModelListToJson,
@@ -130,11 +133,11 @@ class MediaLibraryPlayListViewModel extends BaseViewModel {
   }
 
   /// 重命名
-  String? renamePlayDirectoryFile(
+  Future<String?> renamePlayDirectoryFile(
     AppDirectoryModel playDirectoryModel,
     String newName,
     int index,
-  ) {
+  ) async {
     String? errorText;
     try {
       if (playDirectoryList.value.length < index) {
@@ -152,9 +155,17 @@ class MediaLibraryPlayListViewModel extends BaseViewModel {
           return errorText;
         }
       }
+      String oldName = playDirectoryModel.name;
 
       playDirectoryModel.name = newName;
       playDirectoryList[i] = playDirectoryModel;
+      // 修改原播放目录下的视频
+      // storage.playList.rename(oldName, newName);
+      var videoListStr = await storage.playList.getString(oldName);
+      if (videoListStr != null && videoListStr.isNotEmpty) {
+        storage.playList.remove(oldName);
+        storage.playList.save(newName, videoListStr);
+      }
       savePlayDirectoryToStorage();
     } catch (e) {
       errorText = "重命名播放列表中的目录名称失败：$e";
@@ -163,38 +174,56 @@ class MediaLibraryPlayListViewModel extends BaseViewModel {
     return errorText;
   }
 
-
   /// 添加视频到播放目录
-  /*String addVideoToPlayDirectory(AppDirectoryModel playDirectoryModel, FileModel fileModel) {
+  Future<String> addVideoToPlayDirectory(
+    AppDirectoryModel playDirectoryModel,
+    AppMediaFileModel fileModel,
+  ) async {
     String msg = "";
     String dirName = playDirectoryModel.name;
-    List<FileModel> videoFileList = [];
-    if (MediaData.playFileListMap.containsKey(CacheConst.cachePrev + dirName)) {
-      videoFileList = MediaData.playFileListMap[CacheConst.cachePrev + dirName] ?? [];
-    } else {
-      // 从存储中获取播放文件列表（path相当于key）
-      String? playFileListJson = PlayListMMKVCache.getInstance().getString(CacheConst.cachePrev + dirName);
-      if (playFileListJson != null && playFileListJson.isNotEmpty) {
-        /// 转换为list
-        videoFileList.assignAll(fileModelListFromJson(playFileListJson));
-      }
-    }
+
+    List<PlayVideoStorageModel> videoFileList =
+        await storage.playList.getStringToObject<PlayVideoStorageModel>(
+          dirName,
+          PlayVideoStorageModel.fromJson,
+        ) ??
+        [];
+    int insertIndex = 0;
     if (videoFileList.isNotEmpty) {
-      bool exists = false;
-      for (FileModel element in videoFileList) {
-        if (element.name == fileModel.name) {
-          exists = true;
-          break;
+      String lowerUrl = fileModel.fullFilePath!.toLowerCase();
+      for (var item in videoFileList) {
+        if (item.url.toLowerCase() == lowerUrl) {
+          msg = "视频已经存在于“$dirName”列表中";
+          return msg;
         }
       }
-      if (exists) {
-        msg = "视频已经存在于“$dirName”列表中";
-      } else {
-        msg = handleAddAndSaveToPlayDirectory(playDirectoryModel, dirName, videoFileList, fileModel);
+
+      for (int i = 0; i < videoFileList.length; i++) {
+        if (videoFileList[i].url.toLowerCase().compareTo(lowerUrl) > 0) {
+          insertIndex = i;
+          break;
+        }
+        insertIndex = i + 1;
       }
-    } else {
-      msg = handleAddAndSaveToPlayDirectory(playDirectoryModel, dirName, videoFileList, fileModel);
     }
+    PlayVideoStorageModel model = PlayVideoStorageModel(
+      name: fileModel.fileName,
+      url: fileModel.fullFilePath!,
+      assetId: fileModel.assetEntity?.id,
+    );
+
+    videoFileList.insert(insertIndex, model);
+    msg = "视频已添加到“$dirName”列表";
+    int i = playDirectoryList.indexOf(playDirectoryModel);
+    playDirectoryModel.fileNumber = videoFileList.length;
+    playDirectoryList[i] = playDirectoryModel;
+    savePlayDirectoryToStorage();
+
+    await storage.playList.saveObjectList<PlayVideoStorageModel>(
+      dirName,
+      videoFileList,
+      listToJson: playVideoStorageModelListToJson,
+    );
     return msg;
-  }*/
+  }
 }

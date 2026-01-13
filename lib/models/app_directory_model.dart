@@ -38,12 +38,17 @@ class AppDirectoryModel<T> {
             : json["fileNumber"] is int
             ? json["fileNumber"]
             : int.parse(json["fileNumber"].toString()),
+        appDirectorySourceType: AppDirectorySourceType.values.firstWhere(
+          (element) => element.toString() == json["appDirectorySourceType"],
+          orElse: () => AppDirectorySourceType.localDirectory,
+        ),
       );
 
   Map<String, dynamic> toJson() => {
     "path": path,
     "name": name,
     "fileNumber": fileNumber,
+    "appDirectorySourceType": appDirectorySourceType.toString(),
   };
 
   File get file => File(path);

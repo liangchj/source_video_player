@@ -2,23 +2,24 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:signals/signals_flutter.dart';
-import 'package:source_video_player/route/locator.dart';
 
 import '../../models/app_directory_model.dart';
+import '../../route/app_pages.dart';
+import '../../route/locator.dart';
 import '../../utils/bottom_sheet_dialog_utils.dart';
-import '../../view_model/media_library_play_list_view_model.dart';
+import '../../view_model/media_library_play_dir_list_view_model.dart';
 import '../../widgets/directory_item_widget.dart';
 
-class MediaLibraryPlayListPage extends StatefulWidget {
-  const MediaLibraryPlayListPage({super.key});
+class MediaLibraryPlayDirListPage extends StatefulWidget {
+  const MediaLibraryPlayDirListPage({super.key});
 
   @override
-  State<MediaLibraryPlayListPage> createState() =>
-      _MediaLibraryPlayListPageState();
+  State<MediaLibraryPlayDirListPage> createState() =>
+      _MediaLibraryPlayDirListPageState();
 }
 
-class _MediaLibraryPlayListPageState extends State<MediaLibraryPlayListPage> {
-  late MediaLibraryPlayListViewModel viewModel;
+class _MediaLibraryPlayDirListPageState extends State<MediaLibraryPlayDirListPage> {
+  late MediaLibraryPlayDirListViewModel viewModel;
   TextEditingController? renameController;
   TextEditingController? newPlayListController;
 
@@ -29,7 +30,7 @@ class _MediaLibraryPlayListPageState extends State<MediaLibraryPlayListPage> {
   @override
   void initState() {
     super.initState();
-    viewModel = MediaLibraryPlayListViewModel();
+    viewModel = MediaLibraryPlayDirListViewModel();
     createNewPlayDirectoryName = signal("");
     createNewPlayDirectoryErrorText = signal(null);
     renameErrorText = Signal(null);
@@ -197,9 +198,7 @@ class _MediaLibraryPlayListPageState extends State<MediaLibraryPlayListPage> {
           return DirectoryItemWidget(
             directoryModel: fileDirectoryModel,
             onTap: () {
-              // Map<String, dynamic> params = {"path": fileDirectoryModel.name, "title": "播放列表",
-              //   "directorySourceType": DirectorySourceType.playDirectory, "dirName": fileDirectoryModel.name};
-              // Get.toNamed(AppRoutes.videoFileList, arguments: params);
+              appGoRouter.push(AppPages.mediaListPage, extra: fileDirectoryModel);
             },
             trailingWidget: IconButton(
               constraints: const BoxConstraints(),
@@ -327,6 +326,7 @@ class _MediaLibraryPlayListPageState extends State<MediaLibraryPlayListPage> {
                                   path: text,
                                   name: text,
                                   fileNumber: 0,
+                                  appDirectorySourceType: AppDirectorySourceType.playDirectory,
                                 ),
                               );
                               if (createNewPlayDirectoryErrorText.value == null ||
@@ -419,17 +419,20 @@ class _MediaLibraryPlayListPageState extends State<MediaLibraryPlayListPage> {
             ),
             TextButton(
               child: const Text("确定"),
-              onPressed: () {
+              onPressed: () async {
                 var newName = renameController!.text;
                 if (newName != oldName) {
-                  renameErrorText.value = viewModel.renamePlayDirectoryFile(
+                  playDirectoryModel.appDirectorySourceType = AppDirectorySourceType.playDirectory;
+                  renameErrorText.value = await viewModel.renamePlayDirectoryFile(
                     playDirectoryModel,
                     newName,
                     index,
                   );
                   if (renameErrorText.value == null || renameErrorText.value!.isEmpty) {
                     renameController!.text = "";
-                    Navigator.of(context).pop();
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
                   }
                 }
               }, //关闭对话框

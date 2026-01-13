@@ -1,15 +1,25 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import '../platform/platform_asset_entity.dart';
 
-enum AppMediaFileSourceType { localFile, playListFile }
+
+
+
+List<AppMediaFileModel> appMediaFileModelListFromJson(String str) =>
+    List<AppMediaFileModel>.from(
+      json.decode(str).map((x) => AppMediaFileModel.fromJson(x)),
+    );
+
+String appMediaFileModelListToJson(List<AppMediaFileModel> data) =>
+    json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
+
 
 class AppMediaFileModel {
   File? file;
 
-  // 本地文件、播放列表文件
-  AppMediaFileSourceType fileSourceType;
+  final bool isLocal;
 
   String? danmakuPath;
   String? subtitlePath;
@@ -20,19 +30,36 @@ class AppMediaFileModel {
 
   Duration? playHistoryDuration;
 
+  String? errorMsg;
+
+  String? playDir;
+
   AppMediaFileModel({
     this.file,
-    this.fileSourceType = AppMediaFileSourceType.localFile,
+    this.isLocal = true,
     this.danmakuPath,
     this.subtitlePath,
     this.assetEntity,
     this.thumbnailUint8List,
     this.playHistoryDuration,
+    this.errorMsg,
+    this.playDir,
   });
+
+  AppMediaFileModel.fromJson(Map<String, dynamic> json)
+      : file = json['file'],
+        isLocal = json['isLocal'],
+        danmakuPath = json['danmakuPath'],
+        subtitlePath = json['subtitlePath'],
+        assetEntity = json['assetEntity'],
+        thumbnailUint8List = json['thumbnailUint8List'],
+        playHistoryDuration = json['playHistoryDuration'],
+        errorMsg = json['errorMsg'],
+        playDir = json['playDir'];
 
   AppMediaFileModel copyWith({
     File? file,
-    AppMediaFileSourceType? fileSourceType,
+    bool? isLocal,
     String? danmakuPath,
     String? subtitlePath,
     PlatformAssetEntity? assetEntity,
@@ -40,15 +67,32 @@ class AppMediaFileModel {
   }) {
     return AppMediaFileModel(
       file: file ?? this.file,
-      fileSourceType: fileSourceType ?? this.fileSourceType,
+      isLocal: isLocal ?? this.isLocal,
       danmakuPath: danmakuPath ?? this.danmakuPath,
       subtitlePath: subtitlePath ?? this.subtitlePath,
       assetEntity: assetEntity ?? this.assetEntity,
       thumbnailUint8List: thumbnailUint8List ?? this.thumbnailUint8List,
+      playHistoryDuration: playHistoryDuration,
+      errorMsg: errorMsg,
+      playDir: playDir,
     );
   }
 
-  String? get fullFilePath => file?.path;
+  Map<String, dynamic> toJson() {
+    return {
+      'file': file,
+      'isLocal': isLocal,
+      'danmakuPath': danmakuPath,
+      'subtitlePath': subtitlePath,
+      'assetEntity': assetEntity,
+      'thumbnailUint8List': thumbnailUint8List,
+      'playHistoryDuration': playHistoryDuration,
+      'errorMsg': errorMsg,
+      'playDir': playDir,
+    };
+  }
+
+  String? get fullFilePath => file?.path ?? assetEntity?.mediaUrl;
   String? get filePath =>
       fullFilePath?.substring(fullFilePath!.lastIndexOf("/") + 1);
   String? get filePathName =>

@@ -1,7 +1,8 @@
 
 import '../models/app_directory_model.dart';
 import '../models/app_file_model.dart';
-import '../view_model/media_library_play_list_view_model.dart';
+import '../models/app_media_file_model.dart';
+import '../view_model/media_library_play_dir_list_view_model.dart';
 
 class MediaLibraryPlayListCache {
   // 是否加载了本地播放目录列表
@@ -9,11 +10,11 @@ class MediaLibraryPlayListCache {
   // 本地播放目录列表
   static List<AppDirectoryModel> localPlayDirectoryList = [];
   // 视频文件列表
-  static Map<String, List<AppFileModel>> videoFileListMap = {};
+  static Map<String, List<AppMediaFileModel>> videoFileListMap = {};
   // 是否加载了播放目录列表
   static bool loadedPlayDirectoryList = false;
   // 播放目录
   static List<AppDirectoryModel> playDirectoryList = [];
   // 播放目录文件
-  static Map<String, List<AppFileModel>> playFileListMap = {};
+  static Map<String, List<AppMediaFileModel>> playFileListMap = {};
 }

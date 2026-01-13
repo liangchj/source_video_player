@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
-import 'package:signals/signals.dart';
+import 'package:signals/signals_flutter.dart';
 
 import '../../models/app_directory_model.dart';
 import '../../models/app_media_file_model.dart';
@@ -36,7 +36,7 @@ class _MediaListPageState extends State<MediaListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_viewModel.folder?.path ?? "未传入目录"),
+        title: Watch((context) => Text(_viewModel.title.value)),
         actions: [
           IconButton(onPressed: () {}, icon: const Icon(Icons.search_rounded)),
           IconButton(

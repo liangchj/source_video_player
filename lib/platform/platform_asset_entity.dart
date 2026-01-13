@@ -1,19 +1,20 @@
 
 import 'dart:typed_data';
 
-abstract class PlatformAssetEntity<T> {
+abstract class PlatformAssetEntity {
   String get title;
   int get duration;
 
-  final T entity;
+  // final T entity;
 
-  PlatformAssetEntity({required this.entity});
+  // PlatformAssetEntity({required this.entity});
 
-  Future<Uint8List?> get thumbnail;
+  Uint8List? get thumbnail;
 
-  Future<String?> get mediaUrl;
+  String? get mediaUrl;
 
   String get id;
 
   DateTime get modifiedDateTime;
+
 }

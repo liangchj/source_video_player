@@ -8,10 +8,14 @@ import 'package:signals/signals_flutter.dart';
 import '../commons/widget_style_commons.dart';
 import '../models/app_directory_model.dart';
 import '../models/app_media_file_model.dart';
+import '../models/play_video_storage_model.dart';
+import '../route/locator.dart';
+import '../storage/storage_keys.dart';
 import '../utils/bottom_sheet_dialog_utils.dart';
 import '../utils/datetime_utils.dart';
 import '../utils/logger_utils.dart';
-import '../view_model/media_library_play_list_view_model.dart';
+import '../view_model/media_library_play_dir_list_view_model.dart';
+import '../view_model/media_list_view_model.dart';
 import 'directory_item_widget.dart';
 import 'time_format_utils.dart';
 
@@ -23,6 +27,7 @@ class MediaItemWidget extends StatefulWidget {
     this.subtitleWidget,
     this.trailingWidget,
     this.onTap,
+    this.playDirListViewModel,
   });
 
   final AppMediaFileModel fileModel;
@@ -30,6 +35,7 @@ class MediaItemWidget extends StatefulWidget {
   final Widget? subtitleWidget;
   final Widget? trailingWidget;
   final VoidCallback? onTap;
+  final MediaLibraryPlayDirListViewModel? playDirListViewModel;
 
   @override
   State<MediaItemWidget> createState() => _MediaItemWidgetState();
@@ -43,12 +49,12 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
   VoidCallback? get onTap => widget.onTap;
   TextEditingController? nameController;
 
-  MediaLibraryPlayListViewModel? playListViewModel;
+  MediaLibraryPlayDirListViewModel? addVideoToPlayDirListViewModel;
 
   @override
   void dispose() {
     nameController?.dispose();
-    playListViewModel?.dispose();
+    addVideoToPlayDirListViewModel?.dispose();
     super.dispose();
   }
 
@@ -90,39 +96,40 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
           child: Stack(
             children: [
               Positioned.fill(child: _videoThumbnail()),
-              Positioned(
-                bottom: WidgetStyleCommons.mediaLeadingRect.bottom,
-                right: WidgetStyleCommons.mediaLeadingRect.right,
-                child: Container(
-                  padding: WidgetStyleCommons.mediaDurationPadding,
-                  color: WidgetStyleCommons.mediaDurationBgColor,
-                  child: duration == null
-                      ? null
-                      : Text(
-                          TimeFormatUtils.durationToMinuteAndSecond(
-                            Duration(seconds: duration),
-                          ),
-                          style: WidgetStyleCommons.mediaDurationTextStyle,
-                        ),
-                ),
-              ),
-              if (fileModel.playHistoryDuration != null && duration != null)
+              if (fileModel.isLocal)
                 Positioned(
-                  left: WidgetStyleCommons.mediaPlayProgressRect.left,
-                  right: WidgetStyleCommons.mediaPlayProgressRect.right,
-                  bottom: WidgetStyleCommons.mediaPlayProgressRect.bottom,
-                  child: SizedBox(
-                    height: WidgetStyleCommons.mediaPlayProgressHeight,
-                    child: LinearProgressIndicator(
-                      backgroundColor:
-                          WidgetStyleCommons.mediaPlayProgressBgColor,
-                      valueColor:
-                          WidgetStyleCommons.mediaPlayProgressColorAnimation,
-                      value:
-                          fileModel.playHistoryDuration!.inSeconds / duration,
-                    ),
+                  bottom: WidgetStyleCommons.mediaLeadingRect.bottom,
+                  right: WidgetStyleCommons.mediaLeadingRect.right,
+                  child: Container(
+                    padding: WidgetStyleCommons.mediaDurationPadding,
+                    color: WidgetStyleCommons.mediaDurationBgColor,
+                    child: duration == null
+                        ? null
+                        : Text(
+                            TimeFormatUtils.durationToMinuteAndSecond(
+                              Duration(seconds: duration),
+                            ),
+                            style: WidgetStyleCommons.mediaDurationTextStyle,
+                          ),
                   ),
                 ),
+                if (fileModel.playHistoryDuration != null && duration != null)
+                  Positioned(
+                    left: WidgetStyleCommons.mediaPlayProgressRect.left,
+                    right: WidgetStyleCommons.mediaPlayProgressRect.right,
+                    bottom: WidgetStyleCommons.mediaPlayProgressRect.bottom,
+                    child: SizedBox(
+                      height: WidgetStyleCommons.mediaPlayProgressHeight,
+                      child: LinearProgressIndicator(
+                        backgroundColor:
+                            WidgetStyleCommons.mediaPlayProgressBgColor,
+                        valueColor:
+                            WidgetStyleCommons.mediaPlayProgressColorAnimation,
+                        value:
+                            fileModel.playHistoryDuration!.inSeconds / duration,
+                      ),
+                    ),
+                  ),
             ],
           ),
         );
@@ -144,7 +151,7 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
     if (fileModel.thumbnailUint8List != null) {
       thumbnail = fileModel.thumbnailUint8List!;
     } else if (fileModel.assetEntity != null) {
-      thumbnail = await fileModel.assetEntity!.thumbnail;
+      thumbnail = fileModel.assetEntity!.thumbnail;
     } else if (fileModel.file != null) {
       thumbnail = await fileModel.file!.readAsBytes();
     }
@@ -356,20 +363,50 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
         icon: WidgetStyleCommons.mediaOperateDelIcon,
         label: const Text("删除"),
         onPressed: () async {
-          //关闭对话框
-          /*bool open = Get.isBottomSheetOpen ?? false;
-          if (open) {
-            Get.back();
-          }*/
-          /*Fluttertoast.showToast(
-              msg: "点击删除",
-              toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.CENTER,
-              timeInSecForIosWeb: 1,
-              backgroundColor: Colors.black.withOpacity(0.7),
-              textColor: Colors.white,
-              fontSize: 16.0
-          );*/
+          if (fileModel.playDir != null && fileModel.playDir != "") {
+            List<PlayVideoStorageModel>? list = await storage.playList
+                .getStringToObject<PlayVideoStorageModel>(
+              fileModel.fileName,
+              PlayVideoStorageModel.fromJson,
+            );
+            int num = (list?.length ?? 0) > 0 ? list!.length - 1 : 0;
+            List<AppDirectoryModel>? playDirList = await storage.settings
+                .getStringToObject<AppDirectoryModel>(
+              StorageKeys.playList,
+              AppDirectoryModel.fromJson,
+            );
+            if (playDirList != null && playDirList.isNotEmpty) {
+              int index = -1;
+              for (int i = 0; i < playDirList.length; i++) {
+                if (playDirList[i].name == fileModel.playDir) {
+                  index = i;
+                  break;
+                }
+              }
+              if (index != -1) {
+                playDirList[index].fileNumber = num;
+                storage.settings.saveObjectList<AppDirectoryModel>(
+                  StorageKeys.playList,
+                  playDirList,
+                  listToJson: appDirectoryModelListToJson,
+                );
+              }
+            }
+            if (widget.playDirListViewModel != null) {
+              int index = -1;
+              var playDirList = widget.playDirListViewModel!.playDirectoryList.value;
+              for (int i = 0; i < playDirList.length; i++) {
+                if (playDirList[i].name == fileModel.playDir) {
+                  index = i;
+                  break;
+                }
+              }
+              if (index != -1) {
+                playDirList[index].fileNumber = num;
+                widget.playDirListViewModel!.playDirectoryList.value = playDirList;
+              }
+            }
+          }
         },
       ),
     ];
@@ -483,38 +520,36 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
 
   /// 构建播放目录列表
   Widget _buildPlayDirectoryList() {
-    // 这里需要获取到播放目录列表，因此需要MediaLibraryPlayListViewModel
-    // playListViewModel ??= MediaLibraryPlayListViewModel();
-    return Container();
-    /*var videoDirectoryList = playListViewModel?.playDirectoryList.value;
-    return Watch((context) => Scrollbar(
+    addVideoToPlayDirListViewModel ??= MediaLibraryPlayDirListViewModel();
+    // return Container();
+    return Watch(
+      (context) => Scrollbar(
         child: ListView.builder(
-            itemExtent: 66,
-            itemCount: playListViewModel?.playDirectoryList.value.length,
-            itemBuilder: (context, index) {
-              AppDirectoryModel<dynamic> fileDirectoryModel = playListViewModel!.playDirectoryList.value[index];
-              return DirectoryItemWidget(
-                directoryModel: fileDirectoryModel,
-                onTap: () {
-                  String toastText = playListViewModel!.addVideoToPlayDirectory(fileDirectoryModel, fileModel);
+          itemExtent: 66,
+          itemCount: addVideoToPlayDirListViewModel!.playDirectoryList.value.length,
+          itemBuilder: (context, index) {
+            AppDirectoryModel<dynamic> fileDirectoryModel =
+                addVideoToPlayDirListViewModel!.playDirectoryList.value[index];
+            return DirectoryItemWidget(
+              directoryModel: fileDirectoryModel,
+              onTap: () async {
+                String toastText = await addVideoToPlayDirListViewModel!
+                    .addVideoToPlayDirectory(fileDirectoryModel, fileModel);
+                if (context.mounted) {
                   Navigator.of(context).pop();
-                  // 视频已经存在于“”列表中
-                  // 一个视频已添加到“”列表
-                  if (toastText.isNotEmpty) {
-                    Fluttertoast.showToast(
-                        msg: toastText,
-                        toastLength: Toast.LENGTH_SHORT,
-                        gravity: ToastGravity.CENTER,
-                        timeInSecForIosWeb: 1,
-                        backgroundColor: Colors.black.withOpacity(0.7),
-                        textColor: Colors.white,
-                        fontSize: 16.0
-                    );
-                  }
-                },
-                contentPadding: const EdgeInsets.only(left: 0, right: 0),
-              );
-            })));*/
+                }
+                // 视频已经存在于“”列表中
+                // 一个视频已添加到“”列表
+                if (toastText.isNotEmpty) {
+                  SmartDialog.showToast(toastText);
+                }
+              },
+              contentPadding: const EdgeInsets.only(left: 0, right: 0),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   /// 创建新的播放列表

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_player_ui/flutter_player_ui.dart';
@@ -6,11 +8,13 @@ import 'package:media_kit/media_kit.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:signals/signals.dart';
 import 'package:source_video_player/player/media_kit_player.dart';
+import 'package:source_video_player/route/locator.dart';
 
 import '../models/app_directory_model.dart';
 import '../models/app_media_file_model.dart';
 import '../models/asset_entity_model.dart';
 import '../models/loading_state_model.dart';
+import '../models/play_video_storage_model.dart';
 import '../storage/player_storage.dart';
 import 'base_view_model.dart';
 
@@ -23,6 +27,11 @@ class MediaListViewModel extends BaseViewModel {
 
   final Signal<LoadingStateModel> loadingState = Signal(LoadingStateModel());
 
+  final Signal<String> title = Signal("");
+
+  late final bool isLocal =
+      folder?.appDirectorySourceType == AppDirectorySourceType.localDirectory;
+
   late PagingController<int, AppMediaFileModel> pagingController;
 
   MediaListViewModel(this.folder) {
@@ -31,6 +40,7 @@ class MediaListViewModel extends BaseViewModel {
   }
   @override
   void init() {
+    title.value = folder?.path ?? "未传入目录";
     if (folder == null) {
       loadingState.value = loadingState.value.copyWith(
         loading: false,
@@ -47,6 +57,12 @@ class MediaListViewModel extends BaseViewModel {
     pagingController = PagingController<int, AppMediaFileModel>(
       getNextPageKey: (PagingState<int, AppMediaFileModel> state) {
         if (!state.hasNextPage || state.lastPageIsEmpty) return null;
+        // 如果当前页返回的数据量小于pageSize，说明已经是最后一页
+        // 获取最后一页的数据量
+        if (state.pages != null && state.pages!.isNotEmpty) {
+          final lastPage = state.pages!.last;
+          if (lastPage.length < pageSize) return null;
+        }
         return state.nextIntPageKey;
       },
       fetchPage: (int pageKey) async {
@@ -61,6 +77,8 @@ class MediaListViewModel extends BaseViewModel {
   @override
   void dispose() {
     loadingState.dispose();
+    title.dispose();
+
     /// 取消事件通知订阅。
     PhotoManager.stopChangeNotify();
     // 移除监听，避免内存泄漏
@@ -98,37 +116,141 @@ class MediaListViewModel extends BaseViewModel {
     int limit = 20,
   }) async {
     List<AppMediaFileModel> mediaFileList = [];
-    if (folder == null || folder!.assetPathEntity == null) {
+    if (folder == null) {
       return mediaFileList;
     }
-    List<AssetEntity> assetEntityList =
-        await (folder!.assetPathEntity! as AssetPathEntity).getAssetListPaged(
-          page: page == 0 ? 0 : page - 1, // 分页获取，0为第一页
-          size: limit, // 每页数量
+    late List<AssetEntity> assetEntityList;
+    if (isLocal) {
+      assetEntityList = await (folder!.assetPathEntity! as AssetPathEntity)
+          .getAssetListPaged(
+            page: page == 0 ? 0 : page - 1, // 分页获取，0为第一页
+            size: limit, // 每页数量
+          );
+      for (var item in assetEntityList) {
+        var file = await item.file;
+        String fullFilePath = file?.path ?? "";
+        if (fullFilePath.isEmpty) {
+          continue;
+        }
+        String key = fullFilePath;
+        var danmakuUrl = await storage.danmaku.getString(key);
+        var subtitleUrl = await storage.subtitle.getString(key);
+        mediaFileList.add(
+          AppMediaFileModel(
+            isLocal: true,
+            // assetEntity: item,
+            // assetEntity: AssetEntityModel(entity: item),
+            assetEntity: AssetEntityModel(
+              id: item.id,
+              duration: item.duration,
+              title: item.title ?? "",
+              thumbnail: await item.thumbnailData,
+              mediaUrl: await item.getMediaUrl(),
+              modifiedDateTime: item.modifiedDateTime,
+            ),
+            danmakuPath: danmakuUrl,
+            subtitlePath: subtitleUrl,
+            file: file,
+          ),
         );
-    for (var item in assetEntityList) {
-      var file = await item.file;
-      String fullFilePath = file?.path ?? "";
-      if (fullFilePath.isEmpty) {
-        continue;
       }
-      String key = "--$fullFilePath-0";
-      // 获取绑定的弹幕文件
-      // var danmakuPaths = GStorage.danmakuPaths.get(key);
-      // var danmakuPath = danmakuPaths?.localPath;
+    } else {
+      List<PlayVideoStorageModel>? list = await storage.playList
+          .getStringToObject<PlayVideoStorageModel>(
+            folder!.name,
+            PlayVideoStorageModel.fromJson,
+          );
+      if (list != null && list.isNotEmpty) {
+        PhotoManager.getAssetPathList(
+          type: RequestType.video,
+          filterOption: FilterOptionGroup(),
+        );
+        // 计算当前页的数据范围
+        int startIndex = (page - 1) * limit;
+        if (startIndex > list.length) {
+          return mediaFileList;
+        }
+        int endIndex = startIndex + limit;
+        if (endIndex > list.length) {
+          endIndex = list.length;
+        }
+        List<PlayVideoStorageModel> currentPageItems = list.sublist(
+          startIndex,
+          endIndex,
+        );
 
-      // 获取绑定的字幕文件
-      // var subtitlePaths = GStorage.subtitlePaths.get(key);
-      // var subtitlePath = subtitlePaths?.path;
-      mediaFileList.add(
-        AppMediaFileModel(
-          // assetEntity: item,
-          assetEntity: AssetEntityModel(entity: item),
-          // danmakuPath: danmakuPath,
-          // subtitlePath: subtitlePath,
-          file: file,
-        ),
-      );
+        for (var item in currentPageItems) {
+          String key = item.url;
+          late AppMediaFileModel mediaFile;
+          if (item.assetId != null) {
+            File file = File(item.url);
+            if (await file.exists()) {
+              AssetEntity? assetEntity = await AssetEntity.fromId(
+                item.assetId!,
+              );
+              if (assetEntity == null) {
+                mediaFile = AppMediaFileModel(
+                  isLocal: false,
+                  assetEntity: AssetEntityModel(
+                    id: item.url,
+                    duration: 0,
+                    title: item.name,
+                    thumbnail: null,
+                    mediaUrl: item.url,
+                    modifiedDateTime: DateTime.now(),
+                  ),
+                );
+              } else {
+                mediaFile = AppMediaFileModel(
+                  isLocal: true,
+                  assetEntity: AssetEntityModel(
+                    id: item.url,
+                    duration: assetEntity.duration,
+                    title: item.name,
+                    thumbnail: await assetEntity.thumbnailData,
+                    mediaUrl: await assetEntity.getMediaUrl(),
+                    modifiedDateTime: assetEntity.modifiedDateTime,
+                  ),
+                  file: file,
+                );
+              }
+            } else {
+              mediaFile = AppMediaFileModel(
+                isLocal: false,
+                errorMsg: "文件已不存在",
+                assetEntity: AssetEntityModel(
+                  id: item.url,
+                  duration: 0,
+                  title: item.name,
+                  thumbnail: null,
+                  mediaUrl: item.url,
+                  modifiedDateTime: DateTime.now(),
+                ),
+              );
+            }
+          } else {
+            // 处理网络视频
+            mediaFile = AppMediaFileModel(
+              isLocal: false,
+              assetEntity: AssetEntityModel(
+                id: item.url,
+                duration: 0,
+                title: item.name,
+                thumbnail: null,
+                mediaUrl: item.url,
+                modifiedDateTime: DateTime.now(),
+              ),
+            );
+          }
+
+          mediaFile.playDir = folder!.name;
+          var danmakuUrl = await storage.danmaku.getString(key);
+          var subtitleUrl = await storage.subtitle.getString(key);
+          mediaFile.danmakuPath = danmakuUrl;
+          mediaFile.subtitlePath = subtitleUrl;
+          mediaFileList.add(mediaFile);
+        }
+      }
     }
     return mediaFileList;
   }
@@ -195,6 +317,27 @@ class MediaListViewModel extends BaseViewModel {
   }
 
   playVideo(AppMediaFileModel mediaFileModel, BuildContext context) async {
+    if (mediaFileModel.errorMsg != null &&
+        mediaFileModel.errorMsg!.isNotEmpty) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("提示"),
+            content: Text(mediaFileModel.errorMsg!),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text("确定"),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
     String name = "";
     if (mediaFileModel.file != null) {
       name = mediaFileModel.file!.path.substring(
@@ -204,7 +347,7 @@ class MediaListViewModel extends BaseViewModel {
     } else {
       name = mediaFileModel.assetEntity?.title ?? "";
     }
-    var mediaUrl = await mediaFileModel.assetEntity?.mediaUrl;
+    var mediaUrl = mediaFileModel.assetEntity?.mediaUrl;
 
     if (context.mounted) {
       MediaKit.ensureInitialized();
@@ -224,16 +367,21 @@ class MediaListViewModel extends BaseViewModel {
         chapterListLoaded: false,
         playerViewModelCallback: (viewModel) {
           viewModel.dataStorage = PlayerStorage();
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            // 异步加载完整列表
-            _loadCompletePlaylist(mediaFileModel, viewModel);
-          });
+          if (isLocal) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              // 异步加载完整列表
+              _loadCompletePlaylist(mediaFileModel, viewModel);
+            });
+          }
         },
       );
     }
   }
 
-  _loadCompletePlaylist(AppMediaFileModel currentMediaFile, PlayerViewModel playerViewModel) async {
+  _loadCompletePlaylist(
+    AppMediaFileModel currentMediaFile,
+    PlayerViewModel playerViewModel,
+  ) async {
     var pages = pagingController.pages ?? [];
     if (pages.isEmpty) {
       PlayerUtils.appendResourceAndUpdateLoadingState(true, playerViewModel);
@@ -248,7 +396,10 @@ class MediaListViewModel extends BaseViewModel {
       activeMediaFileModel: currentMediaFile,
       pageStartIndex: 0,
     );
-    PlayerUtils.appendResourceAndUpdateLoadingState(true, playerViewModel, chapterList: completeChapterList,);
+    PlayerUtils.appendResourceAndUpdateLoadingState(
+      true,
+      playerViewModel,
+      chapterList: completeChapterList,
+    );
   }
-
 }
