@@ -198,7 +198,11 @@ class _MediaLibraryPlayDirListPageState extends State<MediaLibraryPlayDirListPag
           return DirectoryItemWidget(
             directoryModel: fileDirectoryModel,
             onTap: () {
-              appGoRouter.push(AppPages.mediaListPage, extra: fileDirectoryModel);
+              Map<String, dynamic> extra = {
+                "folder": fileDirectoryModel,
+                "dirListViewModel": viewModel,
+              };
+              appGoRouter.push(AppPages.mediaListPage, extra: extra);
             },
             trailingWidget: IconButton(
               constraints: const BoxConstraints(),

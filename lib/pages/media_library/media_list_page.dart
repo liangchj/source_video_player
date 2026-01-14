@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:signals/signals_flutter.dart';
 
+import '../../commons/widget_style_commons.dart';
 import '../../models/app_directory_model.dart';
 import '../../models/app_media_file_model.dart';
+import '../../models/play_video_storage_model.dart';
+import '../../route/locator.dart';
+import '../../storage/storage_keys.dart';
+import '../../utils/bottom_sheet_dialog_utils.dart';
+import '../../view_model/base_view_model.dart';
+import '../../view_model/media_library_play_dir_list_view_model.dart';
 import '../../view_model/media_list_view_model.dart';
 import '../../widgets/custom_page_error.dart';
 import '../../widgets/media_item_widget.dart';
 
 class MediaListPage extends StatefulWidget {
-  const MediaListPage({super.key, this.folder});
+  const MediaListPage({super.key, this.folder, this.dirListViewModel});
 
   final AppDirectoryModel? folder;
+  final BaseViewModel? dirListViewModel;
 
   @override
   State<MediaListPage> createState() => _MediaListPageState();
@@ -92,6 +101,7 @@ class _MediaListPageState extends State<MediaListPage> {
             itemBuilder: (context, item, index) => MediaItemWidget(
               fileModel: item,
               onTap: () => _viewModel.playVideo(item, context),
+              deleteMediaItemWidget: _deleteMediaItemWidget(context, item),
             ),
             // _mediaListTile(item),
             firstPageErrorIndicatorBuilder: (context) => CustomFirstPageError(
@@ -136,11 +146,132 @@ class _MediaListPageState extends State<MediaListPage> {
             ),
           ],
         ),
-        child: Text(
-          "$dirName(${_viewModel.folder?.fileNumber ?? 0}个视频)",
-          textAlign: TextAlign.left,
+        child: Watch(
+          (context) => Text(
+            "$dirName(${_viewModel.fileNumber}个视频)",
+            textAlign: TextAlign.left,
+          ),
         ),
       ),
     );
+  }
+
+  Widget? _deleteMediaItemWidget(
+    BuildContext context,
+    AppMediaFileModel fileModel,
+  ) {
+    if (widget.dirListViewModel == null) {
+      return null;
+    }
+    return widget.folder?.appDirectorySourceType ==
+            AppDirectorySourceType.playDirectory
+        ? TextButton.icon(
+            style: WidgetStyleCommons.mediaOperateButtonStyle,
+            icon: WidgetStyleCommons.mediaOperateDelIcon,
+            label: const Text("移除"),
+            onPressed: () async {
+              //关闭BottomSheet
+              BottomSheetDialogUtils.closeCurrentBottomSheet(context);
+              // 等待下一帧，确保 UI 状态更新
+              await WidgetsBinding.instance.endOfFrame;
+              if (context.mounted) {
+                showDialog<bool>(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text("移除视频"),
+                      content: Text("您确定想要从播放列表中移除“${fileModel.fileName}”？"),
+                      actions: [
+                        TextButton(
+                          child: const Text("取消"),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                        TextButton(
+                          child: const Text("移除"),
+                          onPressed: () async {
+                            var flag = await _removeMediaItemFromPlayList(
+                              fileModel,
+                            );
+                            if (!flag) {
+                              return;
+                            }
+                            _viewModel.removeMediaItem(fileModel);
+                            if (context.mounted) {
+                              Navigator.of(context).pop();
+                            }
+                          }, //关闭对话框
+                        ),
+                      ],
+                    );
+                  },
+                );
+              }
+            },
+          )
+        : null;
+  }
+
+  Future<bool> _removeMediaItemFromPlayList(AppMediaFileModel fileModel) async {
+    if (_viewModel.folder != null && _viewModel.folder!.name != "") {
+      List<PlayVideoStorageModel>? list = await storage.playList
+          .getStringToObject<PlayVideoStorageModel>(
+            _viewModel.folder!.name,
+            PlayVideoStorageModel.fromJson,
+          );
+      if (list == null || list.isEmpty) {
+        SmartDialog.showToast('获取播放列表为空，无法移除！');
+        return false;
+      }
+      int oldNum = list.length;
+
+      list.removeWhere((item) => item.url == fileModel.fullFilePath);
+
+      // int num = list.isNotEmpty ? list.length - 1 : 0;
+      int num = list.length;
+
+      if (num == oldNum) {
+        SmartDialog.showToast('列表中已不存在此视频，请刷新列表后重试！');
+        return false;
+      }
+
+      await storage.playList.saveObjectList<PlayVideoStorageModel>(
+        _viewModel.folder!.name,
+        list,
+        listToJson: playVideoStorageModelListToJson,
+      );
+
+      List<AppDirectoryModel>? playDirList = await storage.settings
+          .getStringToObject<AppDirectoryModel>(
+            StorageKeys.playList,
+            AppDirectoryModel.fromJson,
+          );
+      if (playDirList != null && playDirList.isNotEmpty) {
+        int index = -1;
+        for (int i = 0; i < playDirList.length; i++) {
+          if (playDirList[i].name == fileModel.playDir) {
+            index = i;
+            break;
+          }
+        }
+        if (index != -1) {
+          playDirList[index].fileNumber = num;
+          storage.settings.saveObjectList<AppDirectoryModel>(
+            StorageKeys.playList,
+            playDirList,
+            listToJson: appDirectoryModelListToJson,
+          );
+          if (widget.dirListViewModel != null &&
+              widget.dirListViewModel is MediaLibraryPlayDirListViewModel) {
+            (widget.dirListViewModel as MediaLibraryPlayDirListViewModel)
+                    .playDirectoryList
+                    .value =
+                playDirList;
+          }
+        }
+      }
+      return true;
+    }
+    SmartDialog.showToast('播放目录为空，无法移除！');
+    return false;
   }
 }

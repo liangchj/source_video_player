@@ -7,6 +7,7 @@ import '../models/app_directory_model.dart';
 import '../pages/home_page.dart';
 import '../pages/media_library/media_library_play_dir_list_page.dart';
 import '../pages/media_library/media_list_page.dart';
+import '../view_model/base_view_model.dart';
 import 'app_pages.dart';
 
 class AppRouter {
@@ -27,8 +28,19 @@ class AppRouter {
         GoRoute(
           path: AppPages.mediaListPage,
           builder: (context, state) {
-            final folder = state.extra is AppDirectoryModel ? state.extra as AppDirectoryModel : null;
-            return MediaListPage(folder:  folder,);
+            AppDirectoryModel? folder;
+            BaseViewModel? dirListViewModel;
+            var extra = state.extra;
+            if (extra != null) {
+              if (extra is AppDirectoryModel) {
+                folder = extra;
+              } else if (extra is Map) {
+                folder = extra['folder'];
+                dirListViewModel = extra['dirListViewModel'];
+              }
+            }
+            // final folder = state.extra is AppDirectoryModel ? state.extra as AppDirectoryModel : null;
+            return MediaListPage(folder:  folder, dirListViewModel: dirListViewModel);
           },
         ),
         GoRoute(

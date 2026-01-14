@@ -29,6 +29,8 @@ class MediaListViewModel extends BaseViewModel {
 
   final Signal<String> title = Signal("");
 
+  final Signal<int> fileNumber = Signal(0);
+
   late final bool isLocal =
       folder?.appDirectorySourceType == AppDirectorySourceType.localDirectory;
 
@@ -36,6 +38,7 @@ class MediaListViewModel extends BaseViewModel {
 
   MediaListViewModel(this.folder) {
     appDirectorySourceType = folder?.appDirectorySourceType;
+    fileNumber.value = folder?.fileNumber ?? 0;
     init();
   }
   @override
@@ -78,6 +81,7 @@ class MediaListViewModel extends BaseViewModel {
   void dispose() {
     loadingState.dispose();
     title.dispose();
+    fileNumber.dispose();
 
     /// 取消事件通知订阅。
     PhotoManager.stopChangeNotify();
@@ -367,12 +371,12 @@ class MediaListViewModel extends BaseViewModel {
         chapterListLoaded: false,
         playerViewModelCallback: (viewModel) {
           viewModel.dataStorage = PlayerStorage();
-          if (isLocal) {
+          // if (isLocal) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               // 异步加载完整列表
               _loadCompletePlaylist(mediaFileModel, viewModel);
             });
-          }
+          // }
         },
       );
     }
@@ -401,5 +405,25 @@ class MediaListViewModel extends BaseViewModel {
       playerViewModel,
       chapterList: completeChapterList,
     );
+  }
+
+  void removeMediaItem(AppMediaFileModel fileModel) {
+    folder?.fileNumber = (folder?.fileNumber ?? 0) - 1;
+    fileNumber.value = folder?.fileNumber ?? 0;
+    _refreshCurrentPosition();
+  }
+
+  Future<void> _refreshCurrentPosition() async {
+    // 保存当前滚动位置
+    final currentItemsCount = pagingController.pages?.length ?? 0;
+
+    // 刷新数据
+    pagingController.refresh();
+
+    // 如果之前已经加载了多页，继续加载到之前的页面数
+    final totalPages = (currentItemsCount / pageSize).ceil();
+    for (int i = 2; i <= totalPages && pagingController.hasNextPage; i++) {
+      pagingController.fetchNextPage();
+    }
   }
 }

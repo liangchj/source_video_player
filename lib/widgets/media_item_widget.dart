@@ -28,6 +28,8 @@ class MediaItemWidget extends StatefulWidget {
     this.trailingWidget,
     this.onTap,
     this.playDirListViewModel,
+    this.delMediaItemFn,
+    this.deleteMediaItemWidget,
   });
 
   final AppMediaFileModel fileModel;
@@ -36,6 +38,8 @@ class MediaItemWidget extends StatefulWidget {
   final Widget? trailingWidget;
   final VoidCallback? onTap;
   final MediaLibraryPlayDirListViewModel? playDirListViewModel;
+  final Function(AppMediaFileModel)? delMediaItemFn;
+  final Widget? deleteMediaItemWidget;
 
   @override
   State<MediaItemWidget> createState() => _MediaItemWidgetState();
@@ -113,23 +117,23 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
                           ),
                   ),
                 ),
-                if (fileModel.playHistoryDuration != null && duration != null)
-                  Positioned(
-                    left: WidgetStyleCommons.mediaPlayProgressRect.left,
-                    right: WidgetStyleCommons.mediaPlayProgressRect.right,
-                    bottom: WidgetStyleCommons.mediaPlayProgressRect.bottom,
-                    child: SizedBox(
-                      height: WidgetStyleCommons.mediaPlayProgressHeight,
-                      child: LinearProgressIndicator(
-                        backgroundColor:
-                            WidgetStyleCommons.mediaPlayProgressBgColor,
-                        valueColor:
-                            WidgetStyleCommons.mediaPlayProgressColorAnimation,
-                        value:
-                            fileModel.playHistoryDuration!.inSeconds / duration,
-                      ),
+              if (fileModel.playHistoryDuration != null && duration != null)
+                Positioned(
+                  left: WidgetStyleCommons.mediaPlayProgressRect.left,
+                  right: WidgetStyleCommons.mediaPlayProgressRect.right,
+                  bottom: WidgetStyleCommons.mediaPlayProgressRect.bottom,
+                  child: SizedBox(
+                    height: WidgetStyleCommons.mediaPlayProgressHeight,
+                    child: LinearProgressIndicator(
+                      backgroundColor:
+                          WidgetStyleCommons.mediaPlayProgressBgColor,
+                      valueColor:
+                          WidgetStyleCommons.mediaPlayProgressColorAnimation,
+                      value:
+                          fileModel.playHistoryDuration!.inSeconds / duration,
                     ),
                   ),
+                ),
             ],
           ),
         );
@@ -296,119 +300,13 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
         //关闭对话框
       },
     );
-    /*if (fileModel.fileSourceType == AppMediaFileSourceType.playListFile) {
-      return [
-        playWidget,
-        subtitlesWidget,
-        danmakuWidget,
-        TextButton.icon(
-          style: buttonStyle,
-          icon: const Icon(Icons.delete_rounded),
-          label: const Text("移除"),
-          onPressed: () async {
-            //关闭对话框
-            bool open = Get.isBottomSheetOpen ?? false;
-            if (open) {
-              Get.back();
-            }
-            Get.defaultDialog(
-              title: "移除视频",
-              radius: 6,
-              content: Text("您确定想要从播放列表中移除“${fileModel.fileName}”？"),
-              actions: [
-                TextButton(
-                  child: const Text("取消"),
-                  onPressed: () {
-                    bool open = Get.isDialogOpen ?? false;
-                    if (open) {
-                      Get.back();
-                    }
-                  },
-                ),
-                TextButton(
-                  child: const Text("移除"),
-                  onPressed: () {
-                    */ /*var remove = Get.find<VideoFileController>().removeVideoFromPlayDirectory(fileModel);
-                      if (remove) {
-                        Get.find<PlayDirectoryListController>().removeVideoFromPlayDirectory(fileModel.directory);
-                      }
-                      Fluttertoast.showToast(
-                          msg: "移除成功",
-                          toastLength: Toast.LENGTH_SHORT,
-                          gravity: ToastGravity.CENTER,
-                          timeInSecForIosWeb: 1,
-                          backgroundColor: Colors.black.withOpacity(0.7),
-                          textColor: Colors.white,
-                          fontSize: 16.0
-                      );*/ /*
-                    bool open = Get.isDialogOpen ?? false;
-                    if (open) {
-                      Get.back();
-                    }
-                  }, //关闭对话框
-                ),
-              ],
-            );
-          },
-        ),
-      ];
-    }*/
+
     return [
       renameWidget,
       subtitlesWidget,
       danmakuWidget,
       addToPlayDirectoryWidget,
-      TextButton.icon(
-        style: WidgetStyleCommons.mediaOperateButtonStyle,
-        icon: WidgetStyleCommons.mediaOperateDelIcon,
-        label: const Text("删除"),
-        onPressed: () async {
-          if (fileModel.playDir != null && fileModel.playDir != "") {
-            List<PlayVideoStorageModel>? list = await storage.playList
-                .getStringToObject<PlayVideoStorageModel>(
-              fileModel.fileName,
-              PlayVideoStorageModel.fromJson,
-            );
-            int num = (list?.length ?? 0) > 0 ? list!.length - 1 : 0;
-            List<AppDirectoryModel>? playDirList = await storage.settings
-                .getStringToObject<AppDirectoryModel>(
-              StorageKeys.playList,
-              AppDirectoryModel.fromJson,
-            );
-            if (playDirList != null && playDirList.isNotEmpty) {
-              int index = -1;
-              for (int i = 0; i < playDirList.length; i++) {
-                if (playDirList[i].name == fileModel.playDir) {
-                  index = i;
-                  break;
-                }
-              }
-              if (index != -1) {
-                playDirList[index].fileNumber = num;
-                storage.settings.saveObjectList<AppDirectoryModel>(
-                  StorageKeys.playList,
-                  playDirList,
-                  listToJson: appDirectoryModelListToJson,
-                );
-              }
-            }
-            if (widget.playDirListViewModel != null) {
-              int index = -1;
-              var playDirList = widget.playDirListViewModel!.playDirectoryList.value;
-              for (int i = 0; i < playDirList.length; i++) {
-                if (playDirList[i].name == fileModel.playDir) {
-                  index = i;
-                  break;
-                }
-              }
-              if (index != -1) {
-                playDirList[index].fileNumber = num;
-                widget.playDirListViewModel!.playDirectoryList.value = playDirList;
-              }
-            }
-          }
-        },
-      ),
+      widget.deleteMediaItemWidget ?? Container(),
     ];
   }
 
@@ -526,7 +424,8 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
       (context) => Scrollbar(
         child: ListView.builder(
           itemExtent: 66,
-          itemCount: addVideoToPlayDirListViewModel!.playDirectoryList.value.length,
+          itemCount:
+              addVideoToPlayDirListViewModel!.playDirectoryList.value.length,
           itemBuilder: (context, index) {
             AppDirectoryModel<dynamic> fileDirectoryModel =
                 addVideoToPlayDirListViewModel!.playDirectoryList.value[index];
