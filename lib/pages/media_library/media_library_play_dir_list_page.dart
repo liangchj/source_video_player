@@ -7,6 +7,7 @@ import '../../models/app_directory_model.dart';
 import '../../route/app_pages.dart';
 import '../../route/locator.dart';
 import '../../utils/bottom_sheet_dialog_utils.dart';
+import '../../utils/widget_utils.dart';
 import '../../view_model/media_library_play_dir_list_view_model.dart';
 import '../../widgets/directory_item_widget.dart';
 
@@ -18,31 +19,24 @@ class MediaLibraryPlayDirListPage extends StatefulWidget {
       _MediaLibraryPlayDirListPageState();
 }
 
-class _MediaLibraryPlayDirListPageState extends State<MediaLibraryPlayDirListPage> {
+class _MediaLibraryPlayDirListPageState
+    extends State<MediaLibraryPlayDirListPage> {
   late MediaLibraryPlayDirListViewModel viewModel;
   TextEditingController? renameController;
-  TextEditingController? newPlayListController;
 
-  late final Signal<String> createNewPlayDirectoryName;
-  late final Signal<String?> createNewPlayDirectoryErrorText;
   late final Signal<String?> renameErrorText;
 
   @override
   void initState() {
     super.initState();
     viewModel = MediaLibraryPlayDirListViewModel();
-    createNewPlayDirectoryName = signal("");
-    createNewPlayDirectoryErrorText = signal(null);
     renameErrorText = Signal(null);
   }
 
   @override
   void dispose() {
     renameController?.dispose();
-    newPlayListController?.dispose();
     viewModel.dispose();
-    createNewPlayDirectoryName.dispose();
-    createNewPlayDirectoryErrorText.dispose();
     renameErrorText.dispose();
     super.dispose();
   }
@@ -71,21 +65,7 @@ class _MediaLibraryPlayDirListPageState extends State<MediaLibraryPlayDirListPag
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: OutlinedButton(
                 onPressed: () {
-                  if (context.mounted) {
-                    BottomSheetDialogUtils.openModalBottomSheet(
-                      (context) => _buildNewPlayDirectory(context),
-                      context: context,
-                      closeBtnShow: false,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.white,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadiusDirectional.only(
-                          topStart: Radius.circular(10),
-                          topEnd: Radius.circular(10),
-                        ),
-                      ),
-                    );
-                  }
+                  WidgetUtils.createNewPlayDirectory(context, viewModel);
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -237,124 +217,6 @@ class _MediaLibraryPlayDirListPageState extends State<MediaLibraryPlayDirListPag
     );
   }
 
-  /// 创建新的播放列表
-  Widget _buildNewPlayDirectory(BuildContext context) {
-    //定义一个controller
-    newPlayListController ??= TextEditingController.fromValue(
-      TextEditingValue(
-        /// 设置光标在最后
-        selection: TextSelection.fromPosition(
-          const TextPosition(affinity: TextAffinity.downstream, offset: 0),
-        ),
-      ),
-    );
-    newPlayListController?.text = "";
-    createNewPlayDirectoryName.value = ""; // 清除新增播放目录名称
-
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.only(
-        top: 10,
-        left: 16,
-        right: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 10,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: const [
-              Icon(Icons.playlist_play_rounded),
-              Text("创建新的播放列表"),
-            ],
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: Watch(
-                  (context) => TextField(
-                    controller: newPlayListController,
-                    autofocus: true,
-                    maxLines: 1,
-                    scrollPadding: EdgeInsets.only(
-                      bottom: MediaQuery.of(context).viewInsets.bottom,
-                    ),
-                    onChanged: (value) {
-                      createNewPlayDirectoryName.value = value; // 新增播放目录名称
-                      if (value.isEmpty) {
-                        // 新增播放目录名称为空时清除验证信息
-                        createNewPlayDirectoryErrorText.value = null;
-                      }
-                    },
-                    decoration: InputDecoration(
-                      isCollapsed: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 12,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        borderSide: const BorderSide(color: Colors.grey),
-                      ),
-                      //获得焦点下划线设为蓝色
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        borderSide: BorderSide(
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ),
-                      border: const OutlineInputBorder(),
-                      // 新增播放目录名称验证信息
-                      errorText: createNewPlayDirectoryErrorText.value,
-                    ),
-                  ),
-                ),
-              ),
-
-              const Padding(padding: EdgeInsets.symmetric(horizontal: 5)),
-              Watch(
-                (context) => Padding(
-                  // 新增播放目录名称验证不通过时显示错误信息导致输入框上移，因此按钮也同步上移
-                  padding: createNewPlayDirectoryErrorText.value == null || createNewPlayDirectoryErrorText.value!.isEmpty
-                      ? EdgeInsets.zero
-                      : const EdgeInsets.only(bottom: 22.0),
-                  child: ElevatedButton(
-                    // 新增播放目录名称为空时不可点击创建按钮
-                    onPressed: createNewPlayDirectoryName.value.isEmpty
-                        ? null
-                        : () {
-                            String text = newPlayListController!.text.trim();
-                            if (text.isNotEmpty) {
-                              createNewPlayDirectoryErrorText.value = viewModel.addPlayDirectory(
-                                AppDirectoryModel(
-                                  path: text,
-                                  name: text,
-                                  fileNumber: 0,
-                                  appDirectorySourceType: AppDirectorySourceType.playDirectory,
-                                ),
-                              );
-                              if (createNewPlayDirectoryErrorText.value == null ||
-                                  createNewPlayDirectoryErrorText.value!.isEmpty) {
-                                newPlayListController?.text = "";
-                                createNewPlayDirectoryName.value = "";
-                                Navigator.of(context).pop();
-                              }
-                            }
-                          },
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(0, 36),
-                    ),
-                    child: const Text("创建"),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   /// 重命名
   _renamePlayDirectoryFile(
     BuildContext context,
@@ -426,13 +288,16 @@ class _MediaLibraryPlayDirListPageState extends State<MediaLibraryPlayDirListPag
               onPressed: () async {
                 var newName = renameController!.text;
                 if (newName != oldName) {
-                  playDirectoryModel.appDirectorySourceType = AppDirectorySourceType.playDirectory;
-                  renameErrorText.value = await viewModel.renamePlayDirectoryFile(
-                    playDirectoryModel,
-                    newName,
-                    index,
-                  );
-                  if (renameErrorText.value == null || renameErrorText.value!.isEmpty) {
+                  playDirectoryModel.appDirectorySourceType =
+                      AppDirectorySourceType.playDirectory;
+                  renameErrorText.value = await viewModel
+                      .renamePlayDirectoryFile(
+                        playDirectoryModel,
+                        newName,
+                        index,
+                      );
+                  if (renameErrorText.value == null ||
+                      renameErrorText.value!.isEmpty) {
                     renameController!.text = "";
                     if (context.mounted) {
                       Navigator.of(context).pop();

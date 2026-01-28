@@ -4,18 +4,14 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:signals/signals_flutter.dart';
-
 import '../commons/widget_style_commons.dart';
 import '../models/app_directory_model.dart';
 import '../models/app_media_file_model.dart';
-import '../models/play_video_storage_model.dart';
-import '../route/locator.dart';
-import '../storage/storage_keys.dart';
 import '../utils/bottom_sheet_dialog_utils.dart';
 import '../utils/datetime_utils.dart';
 import '../utils/logger_utils.dart';
+import '../utils/widget_utils.dart';
 import '../view_model/media_library_play_dir_list_view_model.dart';
-import '../view_model/media_list_view_model.dart';
 import 'directory_item_widget.dart';
 import 'time_format_utils.dart';
 
@@ -52,12 +48,13 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
   Widget? get trailingWidget => widget.trailingWidget;
   VoidCallback? get onTap => widget.onTap;
   TextEditingController? nameController;
-
+  TextEditingController? newPlayListController;
   MediaLibraryPlayDirListViewModel? addVideoToPlayDirListViewModel;
 
   @override
   void dispose() {
     nameController?.dispose();
+    newPlayListController?.dispose();
     addVideoToPlayDirListViewModel?.dispose();
     super.dispose();
   }
@@ -378,6 +375,8 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
 
   /// 添加到播放列表
   _addToPlayList(BuildContext context) {
+    // BottomSheetDialogUtils.closeCurrentBottomSheet(context);
+    Navigator.of(context).pop();
     if (!context.mounted) {
       return;
     }
@@ -397,7 +396,19 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
               child: Text("将视频添加至播放列表", textAlign: TextAlign.left),
             ),
             OutlinedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.of(context).pop();
+                addVideoToPlayDirListViewModel ??=
+                    MediaLibraryPlayDirListViewModel();
+                WidgetUtils.createNewPlayDirectory(
+                  context,
+                  addVideoToPlayDirListViewModel!,
+                  createdCallBack: (fileDirectoryModel) {
+                    _handleAddVideoToPlayDirList(fileDirectoryModel, context);
+                  },
+                );
+                // _buildNewPlayDirectory();
+              },
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: const [Icon(Icons.add), Text("创建新播放列表")],
@@ -419,7 +430,6 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
   /// 构建播放目录列表
   Widget _buildPlayDirectoryList() {
     addVideoToPlayDirListViewModel ??= MediaLibraryPlayDirListViewModel();
-    // return Container();
     return Watch(
       (context) => Scrollbar(
         child: ListView.builder(
@@ -431,18 +441,8 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
                 addVideoToPlayDirListViewModel!.playDirectoryList.value[index];
             return DirectoryItemWidget(
               directoryModel: fileDirectoryModel,
-              onTap: () async {
-                String toastText = await addVideoToPlayDirListViewModel!
-                    .addVideoToPlayDirectory(fileDirectoryModel, fileModel);
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
-                // 视频已经存在于“”列表中
-                // 一个视频已添加到“”列表
-                if (toastText.isNotEmpty) {
-                  SmartDialog.showToast(toastText);
-                }
-              },
+              onTap: () =>
+                  _handleAddVideoToPlayDirList(fileDirectoryModel, context),
               contentPadding: const EdgeInsets.only(left: 0, right: 0),
             );
           },
@@ -451,112 +451,19 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
     );
   }
 
-  /// 创建新的播放列表
-  Widget _buildNewPlayDirectory() {
-    return Container();
-    /*var playDirectoryController = Get.find<PlayDirectoryListController>();
-    //关闭对话框
-    bool open = Get.isBottomSheetOpen ?? false;
-    if(open) {
-      Get.back();
+  void _handleAddVideoToPlayDirList(
+    AppDirectoryModel<dynamic> fileDirectoryModel,
+    BuildContext context,
+  ) async {
+    String toastText = await addVideoToPlayDirListViewModel!
+        .addVideoToPlayDirectory(fileDirectoryModel, fileModel);
+    if (context.mounted) {
+      Navigator.of(context).pop();
     }
-    //定义一个controller
-    TextEditingController newPlayListController =
-    TextEditingController.fromValue(TextEditingValue(
-      /// 设置光标在最后
-      selection: TextSelection.fromPosition(const TextPosition(
-          affinity: TextAffinity.downstream,
-          offset: 0)),
-    ));
-    playDirectoryController.createNewPlayDirectoryName.value = ""; // 清除新增播放目录名称
-    playDirectoryController.createNewPlayDirectoryErrorText.value = ""; // 清除新增播放目录验证信息
-    return SingleChildScrollView(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-        child: Column(
-          children: [
-            Row(
-              children: const [
-                Icon(Icons.playlist_play_rounded),
-                Text("创建新的播放列表")
-              ],
-            ),
-            Row(
-              children: [
-                Obx(() => Expanded(child: TextField(
-                  controller: newPlayListController,
-                  autofocus: true,
-                  maxLines: 1,
-                  scrollPadding: EdgeInsets.zero,
-                  onChanged: (value) {
-                    playDirectoryController.createNewPlayDirectoryName.value = value; // 新增播放目录名称
-                    if (value.isEmpty) { // 新增播放目录名称为空时清除验证信息
-                      playDirectoryController.createNewPlayDirectoryErrorText.value = "";
-                    }
-                  },
-                  decoration: InputDecoration(
-                      isCollapsed: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        borderSide: const BorderSide(color: Colors.grey),
-                      ),
-                      //获得焦点下划线设为蓝色
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        borderSide: BorderSide(color: Get.theme.backgroundColor),
-                      ),
-                      border: const OutlineInputBorder(
-                      ),
-                      // 新增播放目录名称验证信息
-                      errorText: playDirectoryController.createNewPlayDirectoryErrorText.value.isEmpty ? null : playDirectoryController.createNewPlayDirectoryErrorText.value
-                  ),
-                ),
-                ),),
-
-                const Padding(padding: EdgeInsets.symmetric(horizontal: 5)),
-                Obx(() =>  Padding(
-                  // 新增播放目录名称验证不通过时显示错误信息导致输入框上移，因此按钮也同步上移
-                  padding: playDirectoryController.createNewPlayDirectoryErrorText.value.isEmpty ? EdgeInsets.zero : const EdgeInsets.only(bottom: 22.0),
-                  child: ElevatedButton(
-                    // 新增播放目录名称为空时不可点击创建按钮
-                      onPressed: playDirectoryController.createNewPlayDirectoryName.value.isEmpty ? null : (){
-                        String text = newPlayListController.text.trim();
-                        if (text.isNotEmpty) {
-                          var fileDirectoryModel = DirectoryModel(path: text,name: text, fileNumber: 0);
-                          var msg = playDirectoryController.addVideoPlayDirectory(fileDirectoryModel);
-                          String toastText = playDirectoryController.addVideoToPlayDirectory(fileDirectoryModel, fileModel);
-                          if (msg == null || msg.isEmpty) {
-                            //关闭对话框
-                            bool open = Get.isBottomSheetOpen ?? false;
-                            if(open) {
-                              Get.back();
-                            }
-                          }
-                          // 视频已经存在于“”列表中
-                          // 一个视频已添加到“”列表
-                          if (toastText.isNotEmpty) {
-                            Fluttertoast.showToast(
-                                msg: toastText,
-                                toastLength: Toast.LENGTH_SHORT,
-                                gravity: ToastGravity.CENTER,
-                                timeInSecForIosWeb: 1,
-                                backgroundColor: Colors.black.withOpacity(0.7),
-                                textColor: Colors.white,
-                                fontSize: 16.0
-                            );
-                          }
-                        }
-                      }, style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(0, 36)
-                  ),
-                      child: const Text("创建")),
-                )),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );*/
+    // 视频已经存在于“”列表中
+    // 一个视频已添加到“”列表
+    if (toastText.isNotEmpty) {
+      SmartDialog.showToast(toastText);
+    }
   }
 }

@@ -47,6 +47,15 @@ android {
             isCrunchPngs = false
         }
     }
+
+    packaging {
+        dex {
+            useLegacyPackaging = true
+        }
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 flutter {
