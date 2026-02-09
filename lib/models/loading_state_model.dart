@@ -27,4 +27,12 @@ class LoadingStateModel<T> {
       data: data ?? this.data,
     );
   }
+
+  void reset() {
+    loading = true;
+    errorMsg = null;
+    loadedSuc = false;
+    isRefresh = false;
+    data = null;
+  }
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:go_router/go_router.dart';
+import 'package:source_video_player/pages/bind_danmaku_page.dart';
 import 'package:source_video_player/pages/media_library/local_media_directory_list_page.dart';
 
 import '../models/app_directory_model.dart';
+import '../models/app_media_file_model.dart';
 import '../pages/home_page.dart';
 import '../pages/media_library/media_library_play_dir_list_page.dart';
 import '../pages/media_library/media_list_page.dart';
@@ -40,7 +42,10 @@ class AppRouter {
               }
             }
             // final folder = state.extra is AppDirectoryModel ? state.extra as AppDirectoryModel : null;
-            return MediaListPage(folder:  folder, dirListViewModel: dirListViewModel);
+            return MediaListPage(
+              folder: folder,
+              dirListViewModel: dirListViewModel,
+            );
           },
         ),
         GoRoute(
@@ -48,6 +53,18 @@ class AppRouter {
           builder: (context, state) => MediaLibraryPlayDirListPage(),
         ),
 
+        GoRoute(
+          path: AppPages.bindDanmakuPage,
+          builder: (context, state) {
+            // try {
+            AppMediaFileModel fileModel = state.extra as AppMediaFileModel;
+            /*} catch (e) {
+              SmartDialog.showToast('参数错误');
+              return const Scaffold(body: Center(child: Text('参数错误')));
+            }*/
+            return BindDanmakuPage(fileModel: fileModel);
+          },
+        ),
       ],
       errorBuilder: (context, state) =>
           const Scaffold(body: Center(child: Text('404'))),

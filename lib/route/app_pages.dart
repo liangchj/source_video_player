@@ -4,5 +4,6 @@ abstract class AppPages {
   static const localMediaLibraryPage = '/localMediaLibraryPage';
   static const mediaListPage = '/mediaListPage';
   static const mediaLibraryPlayListPage = '/mediaLibraryPlayListPage';
+  static const bindDanmakuPage = '/bindDanmakuPage';
 
 }

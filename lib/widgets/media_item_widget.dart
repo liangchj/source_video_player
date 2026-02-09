@@ -7,6 +7,8 @@ import 'package:signals/signals_flutter.dart';
 import '../commons/widget_style_commons.dart';
 import '../models/app_directory_model.dart';
 import '../models/app_media_file_model.dart';
+import '../route/app_pages.dart';
+import '../route/locator.dart';
 import '../utils/bottom_sheet_dialog_utils.dart';
 import '../utils/datetime_utils.dart';
 import '../utils/logger_utils.dart';
@@ -280,7 +282,7 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
       icon: WidgetStyleCommons.mediaOperateDanmakuIcon,
       label: const Text("绑定弹幕"),
       onPressed: () {
-        // Get.toNamed(AppRoutes.searchDanmakuSubtitle, arguments: fileModel);
+        appGoRouter.push(AppPages.bindDanmakuPage, extra: fileModel);
       },
     );
     Widget addToPlayDirectoryWidget = TextButton.icon(

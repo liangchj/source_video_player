@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -137,7 +138,18 @@ class MediaListViewModel extends BaseViewModel {
           continue;
         }
         String key = fullFilePath;
-        var danmakuUrl = await storage.danmaku.getString(key);
+        String? danmakuUrl;
+        // var danmakuUrl = await storage.danmaku.getString(key);
+        var bindDanmakuInfo = await storage.danmaku.getString(key);
+        // if (danmakuUrl == null || danmakuUrl.isEmpty) {
+        //   danmakuUrl = "/storage/emulated/0/1/1.xml";
+        // }
+        if (bindDanmakuInfo != null && bindDanmakuInfo.isNotEmpty) {
+          try {
+            var map = jsonDecode(bindDanmakuInfo);
+            var danmakuUrl = map["danmakuUrl"];
+          } catch (_) {}
+        }
         var subtitleUrl = await storage.subtitle.getString(key);
         mediaFileList.add(
           AppMediaFileModel(
@@ -311,6 +323,8 @@ class MediaListViewModel extends BaseViewModel {
             index: globalIndex,
             playUrl: mediaUrl ?? item.file?.path,
             activated: activated,
+            danmakuPath: item.danmakuPath,
+            subtitlePath: item.subtitlePath,
             // mediaFileModel: item,
           ),
         );
@@ -365,6 +379,8 @@ class MediaListViewModel extends BaseViewModel {
             index: 0,
             playUrl: mediaUrl ?? mediaFileModel.file?.path,
             activated: true,
+            danmakuPath: mediaFileModel.danmakuPath,
+            subtitlePath: mediaFileModel.subtitlePath,
             // mediaFileModel: item,
           ),
         ],
@@ -372,10 +388,10 @@ class MediaListViewModel extends BaseViewModel {
         playerViewModelCallback: (viewModel) {
           viewModel.dataStorage = PlayerStorage();
           // if (isLocal) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              // 异步加载完整列表
-              _loadCompletePlaylist(mediaFileModel, viewModel);
-            });
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // 异步加载完整列表
+            _loadCompletePlaylist(mediaFileModel, viewModel);
+          });
           // }
         },
       );
