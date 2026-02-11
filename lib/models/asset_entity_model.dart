@@ -48,4 +48,16 @@ class AssetEntityModel extends PlatformAssetEntity {
 
   @override
   DateTime get modifiedDateTime => super.entity.modifiedDateTime;*/
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'duration': duration,
+      'title': title,
+      'thumbnail': thumbnail,
+      'mediaUrl': mediaUrl,
+      'modifiedDateTime': modifiedDateTime.millisecondsSinceEpoch,
+    };
+  }
 }

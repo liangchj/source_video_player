@@ -2,27 +2,27 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter_player_ui/model/file_source_model.dart';
+
 import '../platform/platform_asset_entity.dart';
 
-
-
-
+/*
 List<AppMediaFileModel> appMediaFileModelListFromJson(String str) =>
     List<AppMediaFileModel>.from(
       json.decode(str).map((x) => AppMediaFileModel.fromJson(x)),
     );
+*/
 
 String appMediaFileModelListToJson(List<AppMediaFileModel> data) =>
     json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
-
 
 class AppMediaFileModel {
   File? file;
 
   final bool isLocal;
 
-  String? danmakuPath;
-  String? subtitlePath;
+  FileSourceModel? danmakuSource;
+  FileSourceModel? subtitleSource;
 
   PlatformAssetEntity? assetEntity;
 
@@ -37,8 +37,8 @@ class AppMediaFileModel {
   AppMediaFileModel({
     this.file,
     this.isLocal = true,
-    this.danmakuPath,
-    this.subtitlePath,
+    this.danmakuSource,
+    this.subtitleSource,
     this.assetEntity,
     this.thumbnailUint8List,
     this.playHistoryDuration,
@@ -46,30 +46,38 @@ class AppMediaFileModel {
     this.playDir,
   });
 
-  AppMediaFileModel.fromJson(Map<String, dynamic> json)
-      : file = json['file'],
-        isLocal = json['isLocal'],
-        danmakuPath = json['danmakuPath'],
-        subtitlePath = json['subtitlePath'],
-        assetEntity = json['assetEntity'],
-        thumbnailUint8List = json['thumbnailUint8List'],
-        playHistoryDuration = json['playHistoryDuration'],
-        errorMsg = json['errorMsg'],
-        playDir = json['playDir'];
+  /*factory AppMediaFileModel.fromJson(Map<String, dynamic> json) {
+    String? filePath = json['file'];
+    String? danmakuSourceStr = json['danmakuSource'];
+    String? assetEntityStr = json['assetEntity'];
+    return AppMediaFileModel(
+      file: filePath == null || filePath.isEmpty ? null : File(filePath),
+      isLocal: json['isLocal'],
+      danmakuSource: danmakuSourceStr == null || danmakuSourceStr.isEmpty
+          ? null
+          : FileSourceModel.fromJson(jsonDecode(danmakuSourceStr)),
+      subtitlePath: json['subtitlePath'],
+      assetEntity: json['assetEntity'],
+      thumbnailUint8List: json['thumbnailUint8List'],
+      playHistoryDuration: json['playHistoryDuration'],
+      errorMsg: json['errorMsg'],
+      playDir: json['playDir'],
+    );
+  }*/
 
   AppMediaFileModel copyWith({
     File? file,
     bool? isLocal,
-    String? danmakuPath,
-    String? subtitlePath,
+    FileSourceModel? danmakuSource,
+    FileSourceModel? subtitleSource,
     PlatformAssetEntity? assetEntity,
     Uint8List? thumbnailUint8List,
   }) {
     return AppMediaFileModel(
       file: file ?? this.file,
       isLocal: isLocal ?? this.isLocal,
-      danmakuPath: danmakuPath ?? this.danmakuPath,
-      subtitlePath: subtitlePath ?? this.subtitlePath,
+      danmakuSource: danmakuSource ?? this.danmakuSource,
+      subtitleSource: subtitleSource ?? this.subtitleSource,
       assetEntity: assetEntity ?? this.assetEntity,
       thumbnailUint8List: thumbnailUint8List ?? this.thumbnailUint8List,
       playHistoryDuration: playHistoryDuration,
@@ -82,9 +90,9 @@ class AppMediaFileModel {
     return {
       'file': file,
       'isLocal': isLocal,
-      'danmakuPath': danmakuPath,
-      'subtitlePath': subtitlePath,
-      'assetEntity': assetEntity,
+      'danmakuSource': danmakuSource?.toJson(),
+      'subtitleSource': subtitleSource?.toJson(),
+      'assetEntity': assetEntity?.toJson(),
       'thumbnailUint8List': thumbnailUint8List,
       'playHistoryDuration': playHistoryDuration,
       'errorMsg': errorMsg,

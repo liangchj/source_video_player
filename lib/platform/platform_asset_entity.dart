@@ -17,4 +17,6 @@ abstract class PlatformAssetEntity {
 
   DateTime get modifiedDateTime;
 
+
+  Map<String, dynamic> toJson();
 }

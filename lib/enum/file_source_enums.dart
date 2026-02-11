@@ -1,5 +1,0 @@
-
-enum FileSourceEnums {
-  localFile,
-  networkFile,
-}

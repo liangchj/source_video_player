@@ -15,7 +15,18 @@ import '../utils/logger_utils.dart';
 import '../utils/widget_utils.dart';
 import '../view_model/media_library_play_dir_list_view_model.dart';
 import 'directory_item_widget.dart';
-import 'time_format_utils.dart';
+import '../utils/time_format_utils.dart';
+
+enum MediaItemWidgetType {
+  /// 默认
+  defaultType,
+
+  /// 弹幕
+  danmakuType,
+
+  /// 字幕
+  subtitleType,
+}
 
 class MediaItemWidget extends StatefulWidget {
   const MediaItemWidget({
@@ -28,6 +39,8 @@ class MediaItemWidget extends StatefulWidget {
     this.playDirListViewModel,
     this.delMediaItemFn,
     this.deleteMediaItemWidget,
+    this.widgetType = MediaItemWidgetType.defaultType,
+    this.operateWidgets = const [],
   });
 
   final AppMediaFileModel fileModel;
@@ -38,6 +51,8 @@ class MediaItemWidget extends StatefulWidget {
   final MediaLibraryPlayDirListViewModel? playDirListViewModel;
   final Function(AppMediaFileModel)? delMediaItemFn;
   final Widget? deleteMediaItemWidget;
+  final MediaItemWidgetType widgetType;
+  final List<Widget> operateWidgets;
 
   @override
   State<MediaItemWidget> createState() => _MediaItemWidgetState();
@@ -48,6 +63,7 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
   Widget? get leadingWidget => widget.leadingWidget;
   Widget? get subtitleWidget => widget.subtitleWidget;
   Widget? get trailingWidget => widget.trailingWidget;
+  MediaItemWidgetType get widgetType => widget.widgetType;
   VoidCallback? get onTap => widget.onTap;
   TextEditingController? nameController;
   TextEditingController? newPlayListController;
@@ -183,16 +199,21 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
 
     /// 弹幕和字幕信息
     List<Widget> subtitleList = [];
-    if (fileModel.danmakuPath != null && fileModel.danmakuPath!.isNotEmpty) {
+    // if (fileModel.danmakuPath != null && fileModel.danmakuPath!.isNotEmpty) {
+    if (fileModel.danmakuSource != null &&
+        fileModel.danmakuSource!.path.isNotEmpty) {
       subtitleList.add(
-        const CircleAvatar(
-          backgroundColor: Colors.blue,
-          radius: 8,
-          child: Text("弹", style: TextStyle(fontSize: 10)),
-        ),
+        widgetType == MediaItemWidgetType.danmakuType
+            ? TextButton(onPressed: () {}, child: Text("弹·移除"))
+            : const CircleAvatar(
+                backgroundColor: Colors.blue,
+                radius: 8,
+                child: Text("弹", style: TextStyle(fontSize: 10)),
+              ),
       );
     }
-    if (fileModel.subtitlePath != null && fileModel.subtitlePath!.isNotEmpty) {
+    if (fileModel.subtitleSource != null &&
+        fileModel.subtitleSource!.path.isNotEmpty) {
       subtitleList.add(
         const CircleAvatar(
           backgroundColor: Colors.blue,
@@ -264,6 +285,14 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
 
   /// 生成操作列表
   List<Widget> _createOperateList(BuildContext context) {
+    if (widgetType == MediaItemWidgetType.danmakuType) {
+      // 后续实现
+      return widget.operateWidgets;
+    } else if (widgetType == MediaItemWidgetType.subtitleType) {
+      return [
+        // 后续实现
+      ];
+    }
     // name 重命名 字幕 弹幕 添加到播放列表 删除
     Widget renameWidget = TextButton.icon(
       style: WidgetStyleCommons.mediaOperateButtonStyle,
@@ -275,13 +304,17 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
       style: WidgetStyleCommons.mediaOperateButtonStyle,
       icon: WidgetStyleCommons.mediaOperateSubtitleIcon,
       label: const Text("搜索字幕"),
-      onPressed: () {},
+      onPressed: () {
+        SmartDialog.showToast('功能暂未实现！');
+      },
     );
     Widget danmakuWidget = TextButton.icon(
       style: WidgetStyleCommons.mediaOperateButtonStyle,
       icon: WidgetStyleCommons.mediaOperateDanmakuIcon,
       label: const Text("绑定弹幕"),
       onPressed: () {
+        //关闭BottomSheet
+        BottomSheetDialogUtils.closeCurrentBottomSheet(context);
         appGoRouter.push(AppPages.bindDanmakuPage, extra: fileModel);
       },
     );
@@ -301,6 +334,7 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
     );
 
     return [
+      ...widget.operateWidgets,
       renameWidget,
       subtitlesWidget,
       danmakuWidget,

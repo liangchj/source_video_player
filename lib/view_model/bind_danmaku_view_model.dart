@@ -1,9 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_player_ui/model/file_source_model.dart';
 import 'package:signals/signals.dart';
 
-import '../enum/file_source_enums.dart';
-import '../models/app_media_file_model.dart';
 import '../models/loading_state_model.dart';
 import '../route/locator.dart';
 import 'base_view_model.dart';
@@ -14,9 +13,7 @@ class BindDanmakuViewModel extends BaseViewModel {
   );
   late TextEditingController searchTextEditingController;
 
-  final AppMediaFileModel appMediaFileModel;
-
-  BindDanmakuViewModel({required this.appMediaFileModel}) {
+  BindDanmakuViewModel() {
     init();
   }
 
@@ -32,11 +29,11 @@ class BindDanmakuViewModel extends BaseViewModel {
   }
 
   /// 绑定弹幕
-  void bindDanmaku(String path, FileSourceEnums fileSource) {
-    appMediaFileModel.danmakuPath = path;
-    storage.danmaku.save(appMediaFileModel.fullFilePath!, {
-      'path': path,
-      'fileSource': fileSource.name,
-    });
+  Future<void> bindDanmaku(String key, FileSourceModel fileSourceModel) async {
+    await storage.danmaku.save(key, fileSourceModel.toJson());
+  }
+
+  Future<void> unbindDanmaku(String key) async {
+    await storage.danmaku.remove(key);
   }
 }

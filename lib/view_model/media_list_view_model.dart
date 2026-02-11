@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_player_ui/flutter_player_ui.dart';
+import 'package:flutter_player_ui/model/file_source_model.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:photo_manager/photo_manager.dart';
@@ -16,6 +17,7 @@ import '../models/app_media_file_model.dart';
 import '../models/asset_entity_model.dart';
 import '../models/loading_state_model.dart';
 import '../models/play_video_storage_model.dart';
+import '../storage/istorage.dart';
 import '../storage/player_storage.dart';
 import 'base_view_model.dart';
 
@@ -138,19 +140,6 @@ class MediaListViewModel extends BaseViewModel {
           continue;
         }
         String key = fullFilePath;
-        String? danmakuUrl;
-        // var danmakuUrl = await storage.danmaku.getString(key);
-        var bindDanmakuInfo = await storage.danmaku.getString(key);
-        // if (danmakuUrl == null || danmakuUrl.isEmpty) {
-        //   danmakuUrl = "/storage/emulated/0/1/1.xml";
-        // }
-        if (bindDanmakuInfo != null && bindDanmakuInfo.isNotEmpty) {
-          try {
-            var map = jsonDecode(bindDanmakuInfo);
-            var danmakuUrl = map["danmakuUrl"];
-          } catch (_) {}
-        }
-        var subtitleUrl = await storage.subtitle.getString(key);
         mediaFileList.add(
           AppMediaFileModel(
             isLocal: true,
@@ -164,8 +153,8 @@ class MediaListViewModel extends BaseViewModel {
               mediaUrl: await item.getMediaUrl(),
               modifiedDateTime: item.modifiedDateTime,
             ),
-            danmakuPath: danmakuUrl,
-            subtitlePath: subtitleUrl,
+            danmakuSource: await getFileSourceModel(key, storage.danmaku),
+            subtitleSource: await getFileSourceModel(key, storage.subtitle),
             file: file,
           ),
         );
@@ -260,10 +249,14 @@ class MediaListViewModel extends BaseViewModel {
           }
 
           mediaFile.playDir = folder!.name;
-          var danmakuUrl = await storage.danmaku.getString(key);
-          var subtitleUrl = await storage.subtitle.getString(key);
-          mediaFile.danmakuPath = danmakuUrl;
-          mediaFile.subtitlePath = subtitleUrl;
+          mediaFile.subtitleSource = await getFileSourceModel(
+            key,
+            storage.danmaku,
+          );
+          mediaFile.subtitleSource = await getFileSourceModel(
+            key,
+            storage.subtitle,
+          );
           mediaFileList.add(mediaFile);
         }
       }
@@ -313,18 +306,16 @@ class MediaListViewModel extends BaseViewModel {
         } else {
           name = item.assetEntity?.title ?? "";
         }
-        var mediaUrl = await item.assetEntity?.mediaUrl;
-        /*if (item.danmakuPath == null || item.danmakuPath == "") {
-          item.danmakuPath = "/storage/emulated/0/1/1.xml";
-        }*/
+        var mediaUrl = item.assetEntity?.mediaUrl;
+
         chapterList.add(
           ChapterModel(
             name: name,
             index: globalIndex,
             playUrl: mediaUrl ?? item.file?.path,
             activated: activated,
-            danmakuPath: item.danmakuPath,
-            subtitlePath: item.subtitlePath,
+            danmakuSource: item.danmakuSource,
+            subtitleSource: item.subtitleSource,
             // mediaFileModel: item,
           ),
         );
@@ -379,8 +370,8 @@ class MediaListViewModel extends BaseViewModel {
             index: 0,
             playUrl: mediaUrl ?? mediaFileModel.file?.path,
             activated: true,
-            danmakuPath: mediaFileModel.danmakuPath,
-            subtitlePath: mediaFileModel.subtitlePath,
+            danmakuSource: mediaFileModel.danmakuSource,
+            subtitleSource: mediaFileModel.subtitleSource,
             // mediaFileModel: item,
           ),
         ],
@@ -441,5 +432,18 @@ class MediaListViewModel extends BaseViewModel {
     for (int i = 2; i <= totalPages && pagingController.hasNextPage; i++) {
       pagingController.fetchNextPage();
     }
+  }
+
+  Future<FileSourceModel?> getFileSourceModel(
+    String key,
+    IBaseStorage storage,
+  ) async {
+    var jsonStr = await storage.getString(key);
+    if (jsonStr != null && jsonStr.isNotEmpty) {
+      try {
+        return FileSourceModel.fromJson(jsonDecode(jsonStr));
+      } catch (_) {}
+    }
+    return null;
   }
 }
