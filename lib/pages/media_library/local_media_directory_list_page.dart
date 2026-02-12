@@ -126,7 +126,7 @@ class _LocalMediaDirectoryListPageState
                       return DirectoryItemWidget(
                         directoryModel: fileDirectoryModel,
                         onTap: () {
-                          appGoRouter.push(AppPages.mediaListPage, extra: fileDirectoryModel);
+                          appRouter.push(AppPages.mediaListPage, extra: fileDirectoryModel);
                           // Get.toNamed(AppRoutes.mediaList, arguments: fileDirectoryModel);
                         },
                       );

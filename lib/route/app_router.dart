@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:go_router/go_router.dart';
-import 'package:source_video_player/pages/bind_danmaku_page.dart';
-import 'package:source_video_player/pages/media_library/local_media_directory_list_page.dart';
 
 import '../models/app_directory_model.dart';
 import '../models/app_media_file_model.dart';
+import '../pages/api_select_list_page.dart';
+import '../pages/bind_danmaku_page.dart';
 import '../pages/home_page.dart';
+import '../pages/media_library/local_media_directory_list_page.dart';
 import '../pages/media_library/media_library_play_dir_list_page.dart';
 import '../pages/media_library/media_list_page.dart';
 import '../view_model/base_view_model.dart';
+import '../view_model/net_resource_home_view_model.dart';
 import 'app_pages.dart';
 
 class AppRouter {
@@ -63,6 +65,20 @@ class AppRouter {
               return const Scaffold(body: Center(child: Text('参数错误')));
             }*/
             return BindDanmakuPage(fileModel: fileModel);
+          },
+        ),
+
+        GoRoute(
+          path: AppPages.apiSelectListPage,
+          builder: (context, state) {
+            try {
+              NetResourceHomeViewModel viewModel =
+                  state.extra as NetResourceHomeViewModel;
+              return ApiSelectListPage(netResourceHomeViewModel: viewModel);
+            } catch (e) {
+              SmartDialog.showToast('参数错误');
+              return const Scaffold(body: Center(child: Text('参数错误')));
+            }
           },
         ),
       ],

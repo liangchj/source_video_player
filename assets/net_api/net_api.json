@@ -1,0 +1,42 @@
+{
+    "mate40127": {
+      "apiKeyConfig": "maccms",
+      "apiBaseModel": {
+        "name": "mate40",
+        "enName": "mate40",
+        "baseUrl": "http://192.168.137.103:9999/api.php/provide/vod"
+      },
+      "netApiMap": {
+        "listApi": {
+        },
+        "detailApi": {
+        },
+        "searchApi": {
+        },
+        "typeListApi": {
+
+        }
+      }
+  },
+  "hongniuzy": {
+    "apiKeyConfig": "maccms",
+    "apiBaseModel": {
+      "name": "红牛资源",
+      "enName": "hongniuzy",
+      "baseUrl": "https://www.hongniuzy2.com/api.php/provide/vod"
+    },
+    "netApiMap": {
+      "listApi": {
+      },
+      "detailApi": {
+      },
+      "searchApi": {
+      },
+      "typeListApi": {
+        "extendMap": {
+          "topTypeId": ""
+        }
+      }
+    }
+  }
+}

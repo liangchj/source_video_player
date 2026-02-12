@@ -21,7 +21,7 @@ void setupLocator() {
   locator.registerLazySingleton<IStorage>(() => StorageService());
 }
 
-GoRouter get appGoRouter => locator<AppRouter>().router;
+GoRouter get appRouter => locator<AppRouter>().router;
 
 
 // 获取存储实例

@@ -54,3 +54,4 @@ abstract class IHistoryStorage<T> extends IBaseStorage {
   });
   Future<int> getHistoryCount();
 }
+

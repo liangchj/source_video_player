@@ -315,7 +315,7 @@ class _MediaItemWidgetState extends State<MediaItemWidget> {
       onPressed: () {
         //关闭BottomSheet
         BottomSheetDialogUtils.closeCurrentBottomSheet(context);
-        appGoRouter.push(AppPages.bindDanmakuPage, extra: fileModel);
+        appRouter.push(AppPages.bindDanmakuPage, extra: fileModel);
       },
     );
     Widget addToPlayDirectoryWidget = TextButton.icon(

@@ -9,6 +9,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:source_video_player/storage/istorage.dart';
 import 'package:source_video_player/utils/logger_utils.dart';
 
+import 'http/dio_utils.dart';
 import 'permission/permission_service.dart';
 import 'route/app_router.dart';
 import 'route/locator.dart';
@@ -45,6 +46,8 @@ Future<void> main() async {
   }
   // 4. 异步初始化存储服务
   _initializeStorageAsync();
+  // 初始化dio
+  DioUtils();
   runApp(const MyApp());
 }
 

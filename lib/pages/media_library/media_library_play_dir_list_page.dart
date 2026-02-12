@@ -47,10 +47,10 @@ class _MediaLibraryPlayDirListPageState
       appBar: AppBar(
         title: const Text('视频播放列表'),
         actions: [
-          IconButton(
+          /*IconButton(
             onPressed: () => {},
             icon: const Icon(Icons.search_rounded),
-          ),
+          ),*/
           IconButton(
             onPressed: () => {},
             icon: const Icon(Icons.refresh_rounded),
@@ -182,7 +182,7 @@ class _MediaLibraryPlayDirListPageState
                 "folder": fileDirectoryModel,
                 "dirListViewModel": viewModel,
               };
-              appGoRouter.push(AppPages.mediaListPage, extra: extra);
+              appRouter.push(AppPages.mediaListPage, extra: extra);
             },
             trailingWidget: IconButton(
               constraints: const BoxConstraints(),
