@@ -28,7 +28,7 @@ class AppFileModel {
   String? barragePath;
   String? subtitlePath;
 
-  factory AppFileModel.fromJson(Map<String, dynamic> json) => AppFileModel(
+  factory AppFileModel.fromJson(Map<dynamic, dynamic> json) => AppFileModel(
     path: json["path"] ?? "",
     fullName: json["fullName"] ?? "",
     directory: json["directory"] ?? "",

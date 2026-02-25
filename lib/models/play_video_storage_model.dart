@@ -21,7 +21,7 @@ class PlayVideoStorageModel {
     this.thumbUrl,
   });
 
-  factory PlayVideoStorageModel.fromJson(Map<String, dynamic> json) {
+  factory PlayVideoStorageModel.fromJson(Map<dynamic, dynamic> json) {
     return PlayVideoStorageModel(
       name: json['name'],
       url: json['url'],

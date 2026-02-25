@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:source_video_player/view_model/home_view_model.dart';
 
+import '../cache/current_configs.dart';
 import '../state/home_state.dart';
 
 class HomePage extends StatefulWidget {
@@ -27,6 +28,7 @@ class _HomePageState extends State<HomePage>
       length: homeState.tabPageList.length,
       vsync: this,
     );
+
   }
 
   @override
@@ -37,6 +39,7 @@ class _HomePageState extends State<HomePage>
 
   @override
   Widget build(BuildContext context) {
+    CurrentConfigs.statusBarHeight = MediaQuery.of(context).padding.top;
     return Scaffold(
       body: ScrollConfiguration(
         behavior: ScrollConfiguration.of(context).copyWith(

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dynamic_api/flutter_dynamic_api.dart';
 import 'package:flutter_dynamic_api/models/dynamic_params_model.dart';
 import 'package:flutter_player_ui/flutter_player_ui.dart';
+import 'package:media_kit/media_kit.dart';
 import 'package:signals/signals.dart';
 
 import '../cache/current_configs.dart';
 import '../models/loading_state_model.dart';
 import '../models/video_model.dart';
+import '../player/media_kit_player.dart';
 import '../utils/logger_utils.dart';
 import '../utils/net_request_utils.dart';
 import 'base_view_model.dart';
@@ -32,7 +34,7 @@ class NetResourceDetailViewModel extends BaseViewModel {
   void init() {
     loadingState.value = loadingState.value.copyWith(
       loading: true,
-      loadedSuc: false,
+      loadedSuc: true,
       errorMsg: null,
     );
     detailApi = CurrentConfigs.currentApi!.netApiMap["detailApi"];
@@ -49,9 +51,11 @@ class NetResourceDetailViewModel extends BaseViewModel {
         errorMsg: "传入的资源id为空!",
       );
     } else {
+      MediaKit.ensureInitialized();
       playerWidget.value = PlayerView(
-        onCreatePlayerViewModel: (playerViewModel) {
-          playerViewModel = playerViewModel;
+        player: MediaKitPlayer(),
+        onCreatePlayerViewModel: (vm) {
+          playerViewModel.value = vm;
         },
       );
     }
@@ -68,6 +72,7 @@ class NetResourceDetailViewModel extends BaseViewModel {
                   url: value.url,
                   apiList: value.apiList,
                 );
+            playerViewModel.value!.resourceState.chapterListLoaded.value = true;
           });
         }
       }),
@@ -80,10 +85,15 @@ class NetResourceDetailViewModel extends BaseViewModel {
     for (var e in effectCleanupList) {
       e.call();
     }
+    try {
+      playerViewModel.value?.dispose();
+    } catch (_) {}
+    try {
+      playerViewModel.dispose();
+    } catch (_) {}
+
     videoModel.dispose();
     playerWidget.dispose();
-    playerViewModel.value?.dispose();
-    playerViewModel.dispose();
   }
 
   // 加载资源详情

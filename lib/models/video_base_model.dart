@@ -8,7 +8,7 @@ class VideoBaseModel {
 
   VideoBaseModel({required this.id, required this.name, required this.enName});
 
-  factory VideoBaseModel.fromJson(Map<String, dynamic> json) {
+  factory VideoBaseModel.fromJson(Map<dynamic, dynamic> json) {
     return VideoBaseModel(
       id: (json["id"] ?? "").toString(),
       name: (json["name"] ?? "").toString(),

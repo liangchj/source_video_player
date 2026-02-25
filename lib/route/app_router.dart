@@ -10,6 +10,7 @@ import '../pages/home_page.dart';
 import '../pages/media_library/local_media_directory_list_page.dart';
 import '../pages/media_library/media_library_play_dir_list_page.dart';
 import '../pages/media_library/media_list_page.dart';
+import '../pages/net_resource_detail_page.dart';
 import '../view_model/base_view_model.dart';
 import '../view_model/net_resource_home_view_model.dart';
 import 'app_pages.dart';
@@ -75,6 +76,19 @@ class AppRouter {
               NetResourceHomeViewModel viewModel =
                   state.extra as NetResourceHomeViewModel;
               return ApiSelectListPage(netResourceHomeViewModel: viewModel);
+            } catch (e) {
+              SmartDialog.showToast('参数错误');
+              return const Scaffold(body: Center(child: Text('参数错误')));
+            }
+          },
+        ),
+
+        GoRoute(
+          path: AppPages.resourceDetailAndPlayerPage,
+          builder: (context, state) {
+            try {
+              String resourceId = state.extra as String;
+              return NetResourceDetailPage(resourceId: resourceId);
             } catch (e) {
               SmartDialog.showToast('参数错误');
               return const Scaffold(body: Center(child: Text('参数错误')));

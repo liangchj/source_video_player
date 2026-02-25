@@ -17,7 +17,7 @@ class VideoTypeModel {
     this.parentId,
     this.childType,
   });
-  factory VideoTypeModel.fromJson(Map<String, dynamic> json) {
+  factory VideoTypeModel.fromJson(Map<dynamic, dynamic> json) {
     FilterCriteriaListModel? childType;
     var childTypeVar = json['childType'];
     if (childTypeVar != null) {

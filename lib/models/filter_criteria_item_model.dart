@@ -28,7 +28,7 @@ class FilterCriteriaItemModel extends FilterCriteriaParamsModel {
     super.parentValue,
   }) : activated = Signal(activated);
 
-  factory FilterCriteriaItemModel.fromJson(Map<String, dynamic> json) {
+  factory FilterCriteriaItemModel.fromJson(Map<dynamic, dynamic> json) {
     var activated = json['activated'];
 
     return FilterCriteriaItemModel(

@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_player_ui/flutter_player_ui.dart';
-import 'package:flutter_player_ui/model/file_source_model.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:photo_manager/photo_manager.dart';

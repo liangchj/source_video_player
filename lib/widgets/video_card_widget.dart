@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../models/video_model.dart';
+import '../route/app_pages.dart';
+import '../route/locator.dart';
 
 class VideoCardWidget extends StatelessWidget {
   const VideoCardWidget({
@@ -26,7 +28,7 @@ class VideoCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        // Get.to((() => NetResourceDetailPage(resourceId: videoModel.id)));
+        appRouter.push(AppPages.resourceDetailAndPlayerPage, extra: videoModel.id);
       },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,

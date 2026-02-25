@@ -6,5 +6,6 @@ abstract class AppPages {
   static const mediaLibraryPlayListPage = '/mediaLibraryPlayListPage';
   static const bindDanmakuPage = '/bindDanmakuPage';
   static const apiSelectListPage = '/apiSelectListPage';
+  static const resourceDetailAndPlayerPage = '/resourceDetailAndPlayerPage';
 
 }

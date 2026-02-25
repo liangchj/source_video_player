@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_player_ui/flutter_player_ui.dart';
-import 'package:flutter_player_ui/model/file_source_model.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:source_video_player/widgets/my_file_selector.dart';

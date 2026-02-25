@@ -26,7 +26,7 @@ class FilterCriteriaListModel extends FilterCriteriaModel {
     );
   }
 
-  factory FilterCriteriaListModel.fromJson(Map<String, dynamic> json) {
+  factory FilterCriteriaListModel.fromJson(Map<dynamic, dynamic> json) {
     var filterCriteriaItemListVar = json['filterCriteriaItemList'];
     List<Map<String, dynamic>> filterCriteriaItems = [];
     if (filterCriteriaItemListVar != null) {

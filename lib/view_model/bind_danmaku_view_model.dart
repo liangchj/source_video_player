@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_player_ui/model/file_source_model.dart';
+import 'package:flutter_player_ui/flutter_player_ui.dart';
 import 'package:signals/signals.dart';
 
 import '../models/loading_state_model.dart';

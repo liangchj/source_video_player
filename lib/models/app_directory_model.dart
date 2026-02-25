@@ -26,7 +26,7 @@ class AppDirectoryModel<T> {
   AppDirectorySourceType appDirectorySourceType;
   T? assetPathEntity;
 
-  factory AppDirectoryModel.fromJson(Map<String, dynamic> json) =>
+  factory AppDirectoryModel.fromJson(Map<dynamic, dynamic> json) =>
       AppDirectoryModel(
         path: json["path"] ?? "",
         name: json["name"] ?? "",

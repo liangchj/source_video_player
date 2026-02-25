@@ -9,7 +9,7 @@ class ApiSourceModel {
 
   ApiSourceModel({this.api, required this.playSourceGroupList});
 
-  factory ApiSourceModel.fromJson(Map<String, dynamic> json) {
+  factory ApiSourceModel.fromJson(Map<dynamic, dynamic> json) {
     List<SourceGroupModel> playSourceGroupList = [];
     var playSourceGroupListVar = json['playSourceGroupList'];
     if (playSourceGroupListVar != null) {

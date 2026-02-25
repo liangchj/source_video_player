@@ -1,9 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-
-import 'package:flutter_player_ui/model/file_source_model.dart';
-
+import 'package:flutter_player_ui/flutter_player_ui.dart';
 import '../platform/platform_asset_entity.dart';
 
 /*
@@ -46,7 +44,7 @@ class AppMediaFileModel {
     this.playDir,
   });
 
-  /*factory AppMediaFileModel.fromJson(Map<String, dynamic> json) {
+  /*factory AppMediaFileModel.fromJson(Map<dynamic, dynamic> json) {
     String? filePath = json['file'];
     String? danmakuSourceStr = json['danmakuSource'];
     String? assetEntityStr = json['assetEntity'];
