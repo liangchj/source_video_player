@@ -57,6 +57,7 @@ class NetResourceDetailViewModel extends BaseViewModel {
         onCreatePlayerViewModel: (vm) {
           playerViewModel.value = vm;
         },
+        fullScreen: false,
       );
     }
     effectCleanupList.addAll([
@@ -83,17 +84,26 @@ class NetResourceDetailViewModel extends BaseViewModel {
   @override
   void dispose() {
     for (var e in effectCleanupList) {
-      e.call();
+      try {
+        e.call();
+      } catch (e1) {
+        LoggerUtils.logger.e("清理 effect 失败: $e1");
+      }
+    }
+    playerWidget.dispose();
+    try {
+      if (playerViewModel.value != null && !playerViewModel.value!.disposed) {
+        playerViewModel.value!.dispose();
+      }
+    } catch (e) {
+      LoggerUtils.logger.e("dispose playerViewModel 失败: $e");
     }
     try {
-      playerViewModel.value?.dispose();
-    } catch (_) {}
-    try {
       playerViewModel.dispose();
-    } catch (_) {}
-
+    } catch (e) {
+      LoggerUtils.logger.e("dispose playerViewModel 的signal对象 失败: $e");
+    }
     videoModel.dispose();
-    playerWidget.dispose();
   }
 
   // 加载资源详情

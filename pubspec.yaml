@@ -96,6 +96,7 @@ flutter:
   assets:
     - assets/net_api/
     - assets/net_api/net_api.json
+    - assets/video/test.mp4
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

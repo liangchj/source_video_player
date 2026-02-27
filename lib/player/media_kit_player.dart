@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_player_ui/flutter_player_ui.dart';
 import 'package:media_kit/media_kit.dart';
@@ -11,10 +13,11 @@ class MediaKitPlayer extends IPlayer {
     _player = Player();
     _videoController = VideoController(_player);
   }
-
+  List<StreamSubscription> _subscriptions = [];
   // 播放器初始化
   @override
   Future<void> onInitPlayer() async {
+    if (disposed) return;
     try {
       /*_videoController.player.open(
         Media(playerViewModel?.playerState.playUrl),
@@ -28,8 +31,7 @@ class MediaKitPlayer extends IPlayer {
           fit: playerViewModel?.playerState.fit.value == null
               ? BoxFit.contain
               : BoxFit.values.firstWhere(
-                  (e) =>
-                      e.name == playerViewModel?.playerState.fit.value?.name,
+                  (e) => e.name == playerViewModel?.playerState.fit.value?.name,
                   orElse: () => BoxFit.contain,
                 ),
           aspectRatio:
@@ -61,7 +63,6 @@ class MediaKitPlayer extends IPlayer {
     }
     try {
       await _player.dispose();
-      disposed = true;
     } catch (_) {}
   }
 
@@ -131,100 +132,119 @@ class MediaKitPlayer extends IPlayer {
     // 监听错误信息
     PlayerStream stream = _videoController.player.stream;
 
-    stream.videoParams.listen((value) {
-      if (disposed || playerViewModelDisposed || playerStateDisposed) {
-        return;
-      }
-      if (value.aspect != null) {
-        playerViewModel?.playerState.videoAspectRatio = value.aspect!;
-      }
-    });
-    stream.error.listen((String? error) {
-      if (disposed || playerViewModelDisposed || playerStateDisposed) {
-        return;
-      }
-      // 视频是否加载错误
-      playerViewModel?.playerState.errorMsg.value = error ?? "";
-    });
+    _subscriptions.add(
+      stream.videoParams.listen((value) {
+        if (disposed || playerViewModelDisposed || playerStateDisposed) {
+          return;
+        }
+        if (value.aspect != null) {
+          playerViewModel?.playerState.videoAspectRatio = value.aspect!;
+        }
+      }),
+    );
+    _subscriptions.add(
+      stream.error.listen((String? error) {
+        if (disposed || playerViewModelDisposed || playerStateDisposed) {
+          return;
+        }
+        // 视频是否加载错误
+        playerViewModel?.playerState.errorMsg.value = error ?? "";
+      }),
+    );
 
-    stream.duration.distinct().listen((value) {
-      if (disposed || playerViewModelDisposed || playerStateDisposed) {
-        return;
-      }
-      if (value.compareTo(Duration.zero) != 0) {
-        playerViewModel?.playerState.isInitialized.value = true;
-      }
-      playerViewModel?.playerState.duration.value = value;
-    });
+    _subscriptions.add(
+      stream.duration.distinct().listen((value) {
+        if (disposed || playerViewModelDisposed || playerStateDisposed) {
+          return;
+        }
+        if (value.compareTo(Duration.zero) != 0) {
+          playerViewModel?.playerState.isInitialized.value = true;
+        }
+        playerViewModel?.playerState.duration.value = value;
+      }),
+    );
 
-    stream.playing.listen((value) {
-      if (disposed || playerViewModelDisposed || playerStateDisposed) {
-        return;
-      }
-      playerViewModel?.playerState.isPlaying.value = value;
-      if (value) {
-        playerViewModel?.playerState.errorMsg.value = "";
-      }
-    });
+    _subscriptions.add(
+      stream.playing.listen((value) {
+        if (disposed || playerViewModelDisposed || playerStateDisposed) {
+          return;
+        }
+        playerViewModel?.playerState.isPlaying.value = value;
+        if (value) {
+          playerViewModel?.playerState.errorMsg.value = "";
+        }
+      }),
+    );
 
-    stream.buffering.listen((value) {
-      if (disposed || playerViewModelDisposed || playerStateDisposed) {
-        return;
-      }
-      playerViewModel?.playerState.isBuffering.value = value;
-    });
+    _subscriptions.add(
+      stream.buffering.listen((value) {
+        if (disposed || playerViewModelDisposed || playerStateDisposed) {
+          return;
+        }
+        playerViewModel?.playerState.isBuffering.value = value;
+      }),
+    );
 
-    stream.completed.listen((value) {
-      if (disposed || playerViewModelDisposed || playerStateDisposed) {
-        return;
-      }
-      playerViewModel?.playerState.isFinished.value = value;
-    });
+    _subscriptions.add(
+      stream.completed.listen((value) {
+        if (disposed || playerViewModelDisposed || playerStateDisposed) {
+          return;
+        }
+        playerViewModel?.playerState.isFinished.value = value;
+      }),
+    );
 
-    stream.rate.listen((value) {
-      if (disposed || playerViewModelDisposed || playerStateDisposed) {
-        return;
-      }
-      playerViewModel?.playerState.playSpeed.value = value;
-    });
+    _subscriptions.add(
+      stream.rate.listen((value) {
+        if (disposed || playerViewModelDisposed || playerStateDisposed) {
+          return;
+        }
+        playerViewModel?.playerState.playSpeed.value = value;
+      }),
+    );
 
     // 监听进度
-    stream.position.listen((Duration? position) {
-      if (disposed || playerViewModelDisposed || playerStateDisposed) {
-        return;
-      }
-      if (position != null &&
-          playerViewModel != null &&
-          !playerViewModel!.playerState.isSeeking.value &&
-          !_videoController.player.state.buffering) {
-        // 防抖：至少间隔 200ms 才更新
-        DateTime now = DateTime.now();
-        if (_lastPositionUpdate == null ||
-            now.difference(_lastPositionUpdate!) >=
-                Duration(milliseconds: 200)) {
-          _lastPositionUpdate = now;
-          var state = _videoController.player.state;
-          bool isFinished = state.completed;
-          // 监听是否播放完成
-          playerViewModel?.playerState.isFinished.value = isFinished;
+    _subscriptions.add(
+      stream.position.listen((Duration? position) {
+        if (disposed || playerViewModelDisposed || playerStateDisposed) {
+          return;
+        }
+        if (position != null &&
+            playerViewModel != null &&
+            !playerViewModel!.playerState.isSeeking.value &&
+            !_videoController.player.state.buffering) {
+          // 防抖：至少间隔 200ms 才更新
+          DateTime now = DateTime.now();
+          if (_lastPositionUpdate == null ||
+              now.difference(_lastPositionUpdate!) >=
+                  Duration(milliseconds: 200)) {
+            _lastPositionUpdate = now;
+            var state = _videoController.player.state;
+            bool isFinished = state.completed;
+            // 监听是否播放完成
+            playerViewModel?.playerState.isFinished.value = isFinished;
 
-          if (isFinished) {
-            playerViewModel?.playerState.positionDuration.value = position;
-          } else {
-            playerViewModel?.playerState.positionDuration.value = Duration(
-              seconds: position.inSeconds,
-            );
+            if (isFinished) {
+              playerViewModel?.playerState.positionDuration.value = position;
+            } else {
+              playerViewModel?.playerState.positionDuration.value = Duration(
+                seconds: position.inSeconds,
+              );
+            }
           }
         }
-      }
-    });
+      }),
+    );
   }
 
   DateTime? _lastPositionUpdate;
 
   @override
   Future<void> changeVideoUrl({bool autoPlay = true}) async {
-    if (disposed || playerViewModelDisposed || playerStateDisposed || resourceDisposed) {
+    if (disposed ||
+        playerViewModelDisposed ||
+        playerStateDisposed ||
+        resourceDisposed) {
       return;
     }
     await _videoController.player.stop();
@@ -260,8 +280,17 @@ class MediaKitPlayer extends IPlayer {
     if (disposed) {
       return;
     }
-    _videoController.player.dispose();
     disposed = true;
+    // 清理所有订阅
+    for (var subscription in _subscriptions) {
+      try {
+        await subscription.cancel();
+      } catch (_) {}
+    }
+    _subscriptions.clear();
+    try {
+      await _videoController.player.dispose();
+    } catch (_) {}
   }
 
   @override

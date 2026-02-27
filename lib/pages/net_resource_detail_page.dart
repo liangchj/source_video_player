@@ -19,24 +19,47 @@ class NetResourceDetailPage extends StatefulWidget {
 }
 
 class _NetResourceDetailPageState extends State<NetResourceDetailPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   String get resourceId => widget.resourceId;
   late NetResourceDetailViewModel _viewModel;
-  final double _playerAspectRatio = 16.0 / 9;
+  final double _playerAspectRatio = 9 / 16.0;
 
   // 详情页的tab控制器
   late TabController _tabController;
   final List<Widget> tabs = [Tab(text: "详情"), Tab(text: "评论")];
 
+  final GlobalKey _playerWidgetKey = GlobalKey();
+
+  // 添加动画控制器
+  late AnimationController _detailAnimationController;
+  late Animation<Offset> _detailSlideAnimation;
+
   @override
   void initState() {
     _tabController = TabController(length: tabs.length, vsync: this);
     _viewModel = NetResourceDetailViewModel(resourceId);
+
+    // 初始化动画控制器
+    _detailAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 33),
+      vsync: this,
+    );
+    _detailSlideAnimation =
+        Tween<Offset>(
+          begin: const Offset(0, 1), // 从底部滑入
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(
+            parent: _detailAnimationController,
+            curve: Curves.easeOut,
+          ),
+        );
     super.initState();
   }
 
   @override
   void dispose() {
+    _detailAnimationController.dispose();
     _tabController.dispose();
     _viewModel.dispose();
     super.dispose();
@@ -45,11 +68,8 @@ class _NetResourceDetailPageState extends State<NetResourceDetailPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: null,
-      // appBar: AppBar(leading: BackButton()),
-      body: Padding(
-        padding: EdgeInsets.only(top: CurrentConfigs.statusBarHeight),
-        child: Watch(
+      body: Watch(
+        (context) => Watch(
           (context) => _viewModel.loadingState.value.loading
               ? const Center(
                   child: SizedBox(
@@ -65,34 +85,93 @@ class _NetResourceDetailPageState extends State<NetResourceDetailPage>
                 )
               : _viewModel.videoModel.value == null
               ? const Center(child: Text("获取资源为空"))
-              : _createPlayerAndDetailWidget(context)
-              /*: SafeArea(
-                  top: true,
-                  left: false,
-                  right: false,
-                  bottom: false,
-                  child: _createPlayerAndDetailWidget(context),
-                ),*/
+              : _createPlayerAndDetailWidget(context),
         ),
       ),
     );
   }
 
   Widget _createPlayerAndDetailWidget(BuildContext context) {
-    return Column(
-      children: [
-        _createPlayerWidget(),
-        Expanded(child: _createDetailWidget(context)),
-      ],
-    );
+    return Watch((context) {
+      var fullscreen =
+          _viewModel.playerViewModel.value != null &&
+          _viewModel.playerViewModel.value!.playerState.isFullscreen.value;
+
+      if (fullscreen) {
+        _detailAnimationController.reverse();
+        return _createPlayerWidget();
+      } else {
+        _detailAnimationController.forward();
+      }
+
+      var size = MediaQuery.of(context).size;
+      double playerHeight = size.width * 9 / 16;
+      return Padding(
+        padding: EdgeInsets.only(
+          top: fullscreen ? 0 : CurrentConfigs.statusBarHeight,
+        ),
+        child: Stack(
+          children: [
+            // 播放器
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: playerHeight,
+              child: Container(
+                color: Colors.black,
+                child: _createPlayerWidget(),
+              ),
+            ),
+            // 详情面板 - 带动画滑入
+            Positioned(
+              left: 0,
+              right: 0,
+              top: playerHeight,
+              bottom: 0,
+              child: SlideTransition(
+                position: _detailSlideAnimation,
+                child: Container(
+                  color: Theme.of(context).canvasColor,
+                  child: _createDetailWidget(context),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
-  _createPlayerWidget() {
-    return AspectRatio(
-      aspectRatio: _playerAspectRatio,
+  Widget _createPlayerWidget() {
+    return SizedBox(
+      key: _playerWidgetKey,
+      width: double.infinity,
+      height: double.infinity,
       child: _viewModel.playerWidget.value,
     );
   }
+
+  /*_createPlayerWidget() {
+    return Watch((context) {
+      double height = 0;
+      double width = 0;
+      var size = MediaQuery.of(context).size;
+      if (_viewModel.playerViewModel.value != null &&
+          _viewModel.playerViewModel.value!.playerState.isFullscreen.value) {
+        height = size.height;
+        width = size.width;
+      } else {
+        width = size.width;
+        height = size.width * _playerAspectRatio;
+      }
+      return SizedBox(
+        width: width,
+        height: height,
+        child: _viewModel.playerWidget.value,
+      );
+    });
+  }*/
 
   _createDetailWidget(BuildContext context) {
     return Column(
@@ -122,15 +201,21 @@ class _NetResourceDetailPageState extends State<NetResourceDetailPage>
               ? Container()
               : Column(
                   children: [
-                    ApiWidget(
-                      uiViewModel:
-                          _viewModel.playerViewModel.value!.uiViewModel,
-                      option: SourceOptionModel(isSelect: true),
+                    Padding(
+                      padding: EdgeInsets.all(WidgetStyleCommons.safeSpace),
+                      child: ApiWidget(
+                        uiViewModel:
+                            _viewModel.playerViewModel.value!.uiViewModel,
+                        option: SourceOptionModel(isSelect: true),
+                      ),
                     ),
-                    SourceGroupWidget(
-                      uiViewModel:
-                          _viewModel.playerViewModel.value!.uiViewModel,
-                      option: SourceOptionModel(singleHorizontalScroll: true),
+                    Padding(
+                      padding: EdgeInsets.all(WidgetStyleCommons.safeSpace),
+                      child: SourceGroupWidget(
+                        uiViewModel:
+                            _viewModel.playerViewModel.value!.uiViewModel,
+                        option: SourceOptionModel(singleHorizontalScroll: true),
+                      ),
                     ),
                     ChapterListWidget(
                       uiViewModel:
