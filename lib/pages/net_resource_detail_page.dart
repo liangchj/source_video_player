@@ -5,10 +5,10 @@ import 'package:flutter_player_ui/flutter_player_ui.dart';
 import 'package:signals/signals_flutter.dart';
 import '../cache/current_configs.dart';
 import '../commons/widget_style_commons.dart';
-import '../utils/bottom_sheet_dialog_utils.dart';
 import '../utils/logger_utils.dart';
 import '../view_model/net_resource_detail_view_model.dart';
 import '../widgets/loading_widget.dart';
+import '../widgets/resource_detail_widget.dart';
 
 class NetResourceDetailPage extends StatefulWidget {
   const NetResourceDetailPage({super.key, required this.resourceId});
@@ -29,6 +29,7 @@ class _NetResourceDetailPageState extends State<NetResourceDetailPage>
   final List<Widget> tabs = [Tab(text: "详情"), Tab(text: "评论")];
 
   final GlobalKey _playerWidgetKey = GlobalKey();
+  final GlobalKey<ScaffoldState> _childWidgetKey = GlobalKey<ScaffoldState>();
 
   // 添加动画控制器
   late AnimationController _detailAnimationController;
@@ -131,9 +132,12 @@ class _NetResourceDetailPageState extends State<NetResourceDetailPage>
               bottom: 0,
               child: SlideTransition(
                 position: _detailSlideAnimation,
-                child: Container(
-                  color: Theme.of(context).canvasColor,
-                  child: _createDetailWidget(context),
+                child: Scaffold(
+                  key: _childWidgetKey,
+                  body: Container(
+                    color: Theme.of(context).canvasColor,
+                    child: _createDetailWidget(context),
+                  ),
                 ),
               ),
             ),
@@ -206,7 +210,7 @@ class _NetResourceDetailPageState extends State<NetResourceDetailPage>
                       child: ApiWidget(
                         uiViewModel:
                             _viewModel.playerViewModel.value!.uiViewModel,
-                        option: SourceOptionModel(isSelect: true),
+                        option: SourceOptionModel(singleHorizontalScroll: true),
                       ),
                     ),
                     Padding(
@@ -262,19 +266,11 @@ class _NetResourceDetailPageState extends State<NetResourceDetailPage>
                   ),
                   InkWell(
                     onTap: () {
-                      BottomSheetDialogUtils.openModalBottomSheet(
-                        (context) => Container(),
-                        context: context,
-                        closeBtnShow: false,
-                        backgroundColor: Colors.white,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadiusDirectional.only(
-                            topStart: Radius.circular(10),
-                            topEnd: Radius.circular(10),
-                          ),
-                        ),
-                        isScrollControlled: true,
-                      );
+                      if (_viewModel.bottomSheetController != null) {
+                        _viewModel.bottomSheetController!.close();
+                        _viewModel.bottomSheetController = null;
+                      }
+                      _viewModel.bottomSheetController = _childWidgetKey.currentState?.showBottomSheet((context) => ResourceDetailWidget(viewModel: _viewModel,));
                     },
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,

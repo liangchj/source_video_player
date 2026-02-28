@@ -30,6 +30,9 @@ class NetResourceDetailViewModel extends BaseViewModel {
 
   NetApiModel? detailApi;
 
+  // 底部弹出BottomSheet控制器
+  PersistentBottomSheetController? bottomSheetController;
+
   @override
   void init() {
     loadingState.value = loadingState.value.copyWith(
