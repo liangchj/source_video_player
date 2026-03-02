@@ -53,7 +53,7 @@ class MediaKitPlayer extends IPlayer {
     }
   }
 
-  @override
+  /*@override
   Future<void> onDisposePlayer() async {
     if (!playerViewModelDisposed && !playerStateDisposed) {
       playerViewModel?.playerState.playerView.value = Container();
@@ -64,7 +64,7 @@ class MediaKitPlayer extends IPlayer {
     try {
       await _player.dispose();
     } catch (_) {}
-  }
+  }*/
 
   @override
   Future<void> play() async {
@@ -125,10 +125,11 @@ class MediaKitPlayer extends IPlayer {
   bool get finished => disposed ? true : _player.state.completed;
 
   @override
-  void updateState() {
+  Future<void> updateState() async {
     if (disposed) {
       return;
     }
+    await clearState();
     // 监听错误信息
     PlayerStream stream = _videoController.player.stream;
 
@@ -258,6 +259,7 @@ class MediaKitPlayer extends IPlayer {
         if (!httpHeaders.containsKey("user-agent")) {
           // httpHeaders["user-agent"] = DioUtils.getRandomUA();
         }
+        await clearState();
         await _videoController.player.open(
           Media(
             playerViewModel!.resourceState.playingChapter!.playUrl!,
@@ -267,6 +269,7 @@ class MediaKitPlayer extends IPlayer {
           ),
           play: autoPlay,
         );
+        updateState();
       } catch (e) {
         playerViewModel?.playerState.errorMsg.value = "播放链接异常：${e.toString()}";
       }
@@ -275,12 +278,7 @@ class MediaKitPlayer extends IPlayer {
     }
   }
 
-  @override
-  Future<void> dispose() async {
-    if (disposed) {
-      return;
-    }
-    disposed = true;
+  Future<void> clearState() async {
     // 清理所有订阅
     for (var subscription in _subscriptions) {
       try {
@@ -288,6 +286,15 @@ class MediaKitPlayer extends IPlayer {
       } catch (_) {}
     }
     _subscriptions.clear();
+  }
+
+  @override
+  Future<void> dispose() async {
+    if (disposed) {
+      return;
+    }
+    disposed = true;
+    await clearState();
     try {
       await _videoController.player.dispose();
     } catch (_) {}
