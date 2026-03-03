@@ -162,6 +162,7 @@ class MediaKitPlayer extends IPlayer {
           playerViewModel?.playerState.isInitialized.value = true;
         }
         playerViewModel?.playerState.duration.value = value;
+        playerViewModel?.playerState.isPlaying.value = _videoController.player.state.playing;
       }),
     );
 
@@ -192,6 +193,7 @@ class MediaKitPlayer extends IPlayer {
           return;
         }
         playerViewModel?.playerState.isFinished.value = value;
+        playerViewModel?.playerState.isPlaying.value = _videoController.player.state.playing;
       }),
     );
 
@@ -210,6 +212,7 @@ class MediaKitPlayer extends IPlayer {
         if (disposed || playerViewModelDisposed || playerStateDisposed) {
           return;
         }
+        playerViewModel?.playerState.isPlaying.value = _videoController.player.state.playing;
         if (position != null &&
             playerViewModel != null &&
             !playerViewModel!.playerState.isSeeking.value &&
