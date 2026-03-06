@@ -106,7 +106,12 @@ class _NetResourceDetailPageState extends State<NetResourceDetailPage>
       }
 
       var size = MediaQuery.of(context).size;
-      double playerHeight = size.width * 9 / 16;
+      double playerHeight = size.width > size.height
+          ? size.height
+          : size.width * (9 / 16);
+      double detailH = size.width > size.height
+          ? size.height - playerHeight
+          : size.height;
       return Padding(
         padding: EdgeInsets.only(
           top: fullscreen ? 0 : CurrentConfigs.statusBarHeight,
@@ -121,6 +126,7 @@ class _NetResourceDetailPageState extends State<NetResourceDetailPage>
               height: playerHeight,
               child: Container(
                 color: Colors.black,
+                height: playerHeight,
                 child: _createPlayerWidget(),
               ),
             ),
@@ -134,10 +140,13 @@ class _NetResourceDetailPageState extends State<NetResourceDetailPage>
                 position: _detailSlideAnimation,
                 child: Scaffold(
                   key: _childWidgetKey,
-                  body: Container(
-                    color: Theme.of(context).canvasColor,
-                    child: _createDetailWidget(context),
-                  ),
+                  body: detailH > 0
+                      ? Container(
+                          color: Theme.of(context).canvasColor,
+                          height: detailH,
+                          child: _createDetailWidget(context),
+                        )
+                      : Container(),
                 ),
               ),
             ),
@@ -177,7 +186,7 @@ class _NetResourceDetailPageState extends State<NetResourceDetailPage>
     });
   }*/
 
-  _createDetailWidget(BuildContext context) {
+  Widget _createDetailWidget(BuildContext context) {
     return Column(
       children: [
         TabBar(controller: _tabController, tabs: tabs),
@@ -195,41 +204,47 @@ class _NetResourceDetailPageState extends State<NetResourceDetailPage>
   }
 
   _createDetailInfoWidget(BuildContext context) {
-    return Column(
-      children: [
-        _createResourceDetailInfoWidget(context),
-        // 创建资源播放控件按钮
-        _createResourceControlBtnWidget(),
-        Watch(
-          (context) => _viewModel.playerViewModel.value == null
-              ? Container()
-              : Column(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.all(WidgetStyleCommons.safeSpace),
-                      child: ApiWidget(
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          _createResourceDetailInfoWidget(context),
+          // 创建资源播放控件按钮
+          _createResourceControlBtnWidget(),
+          Watch(
+            (context) => _viewModel.playerViewModel.value == null
+                ? Container()
+                : Column(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(WidgetStyleCommons.safeSpace),
+                        child: ApiWidget(
+                          uiViewModel:
+                              _viewModel.playerViewModel.value!.uiViewModel,
+                          option: SourceOptionModel(
+                            singleHorizontalScroll: true,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(WidgetStyleCommons.safeSpace),
+                        child: SourceGroupWidget(
+                          uiViewModel:
+                              _viewModel.playerViewModel.value!.uiViewModel,
+                          option: SourceOptionModel(
+                            singleHorizontalScroll: true,
+                          ),
+                        ),
+                      ),
+                      ChapterListWidget(
                         uiViewModel:
                             _viewModel.playerViewModel.value!.uiViewModel,
                         option: SourceOptionModel(singleHorizontalScroll: true),
                       ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(WidgetStyleCommons.safeSpace),
-                      child: SourceGroupWidget(
-                        uiViewModel:
-                            _viewModel.playerViewModel.value!.uiViewModel,
-                        option: SourceOptionModel(singleHorizontalScroll: true),
-                      ),
-                    ),
-                    ChapterListWidget(
-                      uiViewModel:
-                          _viewModel.playerViewModel.value!.uiViewModel,
-                      option: SourceOptionModel(singleHorizontalScroll: true),
-                    ),
-                  ],
-                ),
-        ),
-      ],
+                    ],
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -270,7 +285,14 @@ class _NetResourceDetailPageState extends State<NetResourceDetailPage>
                         _viewModel.bottomSheetController!.close();
                         _viewModel.bottomSheetController = null;
                       }
-                      _viewModel.bottomSheetController = _childWidgetKey.currentState?.showBottomSheet((context) => ResourceDetailWidget(viewModel: _viewModel,));
+                      _viewModel.bottomSheetController = _childWidgetKey
+                          .currentState
+                          ?.showBottomSheet(
+                            (context) =>
+                                Container(
+                                    color: Colors.amber,
+                                    child: ResourceDetailWidget(viewModel: _viewModel)),
+                          );
                     },
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
