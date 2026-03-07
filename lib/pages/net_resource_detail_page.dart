@@ -221,7 +221,45 @@ class _NetResourceDetailPageState extends State<NetResourceDetailPage>
                           uiViewModel:
                               _viewModel.playerViewModel.value!.uiViewModel,
                           option: SourceOptionModel(
-                            singleHorizontalScroll: true,
+                            // singleHorizontalScroll: true,
+                            isSelect: true,
+                            dialogFn: (SourceOptionDialogType type) {
+                              if (type == SourceOptionDialogType.open) {
+                                _viewModel.bottomSheetController?.close();
+                                _viewModel.bottomSheetController = null;
+                                _viewModel
+                                    .bottomSheetController = _childWidgetKey
+                                    .currentState
+                                    ?.showBottomSheet(
+                                      (context) => Container(
+                                        color: Colors.amber,
+                                        child: ApiWidget(
+                                          uiViewModel: _viewModel
+                                              .playerViewModel
+                                              .value!
+                                              .uiViewModel,
+                                          option: SourceOptionModel(
+                                            bottomSheet: true,
+                                            isGrid: true,
+                                            dialogFn:
+                                                (SourceOptionDialogType type) {
+                                                  if (type ==
+                                                      SourceOptionDialogType
+                                                          .close) {
+                                                    _viewModel
+                                                        .bottomSheetController
+                                                        ?.close();
+                                                    _viewModel
+                                                            .bottomSheetController =
+                                                        null;
+                                                  }
+                                                },
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                              }
+                            },
                           ),
                         ),
                       ),
@@ -232,13 +270,92 @@ class _NetResourceDetailPageState extends State<NetResourceDetailPage>
                               _viewModel.playerViewModel.value!.uiViewModel,
                           option: SourceOptionModel(
                             singleHorizontalScroll: true,
+                            dialogFn: (SourceOptionDialogType type) {
+                              if (type == SourceOptionDialogType.open) {
+                                _viewModel.bottomSheetController?.close();
+                                _viewModel.bottomSheetController = null;
+                                _viewModel
+                                    .bottomSheetController = _childWidgetKey
+                                    .currentState
+                                    ?.showBottomSheet(
+                                      (context) => Container(
+                                        color: Colors.amber,
+                                        child: SourceGroupWidget(
+                                          uiViewModel: _viewModel
+                                              .playerViewModel
+                                              .value!
+                                              .uiViewModel,
+                                          option: SourceOptionModel(
+                                            bottomSheet: true,
+                                            isGrid: true,
+                                            dialogFn:
+                                                (SourceOptionDialogType type) {
+                                                  if (type ==
+                                                      SourceOptionDialogType
+                                                          .close) {
+                                                    _viewModel
+                                                        .bottomSheetController
+                                                        ?.close();
+                                                    _viewModel
+                                                            .bottomSheetController =
+                                                        null;
+                                                  }
+                                                },
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                              }
+                            },
                           ),
                         ),
                       ),
-                      ChapterListWidget(
-                        uiViewModel:
-                            _viewModel.playerViewModel.value!.uiViewModel,
-                        option: SourceOptionModel(singleHorizontalScroll: true),
+                      Padding(
+                        padding: EdgeInsets.all(WidgetStyleCommons.safeSpace),
+                        child: ChapterListWidget(
+                          uiViewModel:
+                              _viewModel.playerViewModel.value!.uiViewModel,
+                          option: SourceOptionModel(
+                            singleHorizontalScroll: true,
+                            dialogFn: (SourceOptionDialogType type) {
+                              if (type == SourceOptionDialogType.open) {
+                                _viewModel.bottomSheetController?.close();
+                                _viewModel.bottomSheetController = null;
+                                _viewModel
+                                    .bottomSheetController = _childWidgetKey
+                                    .currentState
+                                    ?.showBottomSheet(
+                                      (context) => Container(
+                                        color: Colors.amber,
+                                        child: ChapterListWidget(
+                                          uiViewModel: _viewModel
+                                              .playerViewModel
+                                              .value!
+                                              .uiViewModel,
+                                          option: SourceOptionModel(
+                                            bottomSheet: true,
+                                            isGrid: true,
+                                            dialogFn:
+                                                (SourceOptionDialogType type) {
+                                                  if (type ==
+                                                      SourceOptionDialogType
+                                                          .close) {
+                                                    _viewModel
+                                                        .bottomSheetController
+                                                        ?.close();
+                                                    _viewModel
+                                                            .bottomSheetController =
+                                                        null;
+                                                  }
+                                                },
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                              }
+                            },
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -288,10 +405,12 @@ class _NetResourceDetailPageState extends State<NetResourceDetailPage>
                       _viewModel.bottomSheetController = _childWidgetKey
                           .currentState
                           ?.showBottomSheet(
-                            (context) =>
-                                Container(
-                                    color: Colors.amber,
-                                    child: ResourceDetailWidget(viewModel: _viewModel)),
+                            (context) => Container(
+                              color: Colors.amber,
+                              child: ResourceDetailWidget(
+                                viewModel: _viewModel,
+                              ),
+                            ),
                           );
                     },
                     child: Row(
